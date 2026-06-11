@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"log"
 	"time"
 )
 
@@ -11,13 +10,13 @@ type Service struct {
 	DB *pgxpool.Pool
 }
 
-func New(databaseUrl string) *Service {
+func New(databaseURL string) (*Service, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	config, err := pgxpool.ParseConfig(databaseUrl)
+	config, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
-		log.Fatalf("unable to parse dburl :%v", err)
+		return nil, err
 	}
 
 	config.MaxConns = 25
@@ -28,17 +27,17 @@ func New(databaseUrl string) *Service {
 
 	db, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		log.Fatalf("unable to create connection pool: %v", err)
-	}
-	if err := db.Ping(ctx); err != nil {
-		log.Fatalf("unable to connect to database: %v", err)
+		return nil, err
 	}
 
-	log.Println("Connected to PostgreSQL")
+	if err := db.Ping(ctx); err != nil {
+		db.Close()
+		return nil, err
+	}
 
 	return &Service{
 		DB: db,
-	}
+	}, nil
 }
 
 func (s *Service) Close() {

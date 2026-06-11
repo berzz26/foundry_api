@@ -1,4 +1,4 @@
-module foundry-api
+module github.com/berzz26/foundry_api
 
 go 1.25.0
 

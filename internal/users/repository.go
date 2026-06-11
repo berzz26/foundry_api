@@ -17,10 +17,10 @@ func (r *Repository) AddUser(ctx context.Context, user *User) (*User, error) {
 	var addedUser User
 
 	err := r.db.QueryRow(ctx, `
-	INSERT INTO users (id, email, firstName, lastName, passwordHash, profileImageUrl, provider, providerId, createdAt, updatedAt) 
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-	RETURNING id, email, firstName, lastName, passwordHash, profileImageUrl, provider, providerId, createdAt, updatedAt
-	`, user.ID, user.Email, user.FirstName, user.LastName, user.PasswordHash, user.ProfileImageURL, user.Provider, user.ProviderID, user.CreatedAt, user.UpdatedAt).Scan(
+	INSERT INTO users (id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id) 
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	RETURNING id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id, created_at, updated_at
+	`, user.ID, user.Email, user.FirstName, user.LastName, user.PasswordHash, user.ProfileImageURL, user.Provider, user.ProviderID).Scan(
 		&addedUser.ID,
 		&addedUser.Email,
 		&addedUser.FirstName,
@@ -42,7 +42,7 @@ func (r *Repository) GetByID(ctx context.Context, id string) (*User, error) {
 	var user User
 
 	err := r.db.QueryRow(ctx, `
-	SELECT id, email, firstName, lastName, profileImageUrl, created_at, updated_at 
+	SELECT id, email, first_name, last_name, profile_image_url, created_at, updated_at 
 	FROM users 
 	WHERE id = $1
 	`, id).Scan(
@@ -63,7 +63,7 @@ func (r *Repository) GetByEmail(ctx context.Context, email string) (*User, error
 	var user User
 
 	err := r.db.QueryRow(ctx, `
-	SELECT id, email, firstName, lastName, passwordHash, profileImageUrl, provider, providerId, createdAt, updatedAt 
+	SELECT id, email, first_name, last_name, profile_image_url, created_at, updated_at 
 	FROM users 
 	WHERE email = $1
 	`, email).Scan(
@@ -122,9 +122,9 @@ func (r *Repository) Update(ctx context.Context, user *User) (*User, error) {
 
 	err := r.db.QueryRow(ctx, `
 	UPDATE users SET 
-	email = $1, firstName = $2, lastName = $3, passwordHash = $4, profileImageUrl = $5, provider = $6, providerId = $7, createdAt = $8, updatedAt = $9 
+	email = $1, first_name = $2, last_name = $3, password_hash = $4, profile_image_url = $5, provider = $6, provider_id = $7, created_at = $8, updated_at = $9 
 	WHERE id = $10
-	RETURNING id, email, firstName, lastName, passwordHash, profileImageUrl, provider, providerId, createdAt, updatedAt
+	RETURNING id, email, first_name, last_name, profile_image_url, created_at, updated_at
 	`, user.Email, user.FirstName, user.LastName, user.PasswordHash, user.ProfileImageURL, user.Provider, user.ProviderID, user.CreatedAt, user.UpdatedAt, user.ID).Scan(
 		&updatedUser.ID,
 		&updatedUser.Email,

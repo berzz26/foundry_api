@@ -10,7 +10,7 @@ type User struct {
 	PasswordHash    string
 	ProfileImageURL *string
 	Provider        string
-	ProviderID      string
+	ProviderID      *string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }

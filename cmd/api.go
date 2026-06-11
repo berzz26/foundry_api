@@ -9,6 +9,7 @@ import (
 	"github.com/berzz26/foundry_api/pkg/database"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 func main() {
@@ -29,6 +30,11 @@ func main() {
 	companyHandler := companies.NewHandler(companyService)
 
 	app := fiber.New()
+	app.Use(cors.New(cors.Config{
+    AllowOrigins: "http://localhost:3001",
+    AllowMethods: "GET,POST,PUT,DELETE",
+    AllowHeaders: "Origin,Content-Type,Accept,Authorization",
+}))
 	api := app.Group("/api")
 	v1 := api.Group("/v1")
 	

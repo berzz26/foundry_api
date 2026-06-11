@@ -19,6 +19,7 @@ type Company struct {
 	ChildSector       *string    `json:"childSector"`
 	Industry          *string    `json:"industry"`
 	LogoURL           *string    `json:"logoUrl"`
+	SmallLogoURL      *string    `json:"smallLogoUrl"`
 	Country           *string    `json:"country"`
 	FoundedAt         *time.Time `json:"foundedAt"`
 	LinkedinURL       *string    `json:"linkedinUrl"`

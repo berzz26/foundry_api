@@ -2,16 +2,15 @@ package users
 
 import "github.com/gofiber/fiber/v2"
 
-func RegisterRoutes(
-	router fiber.Router,
-	handler *Handler,
-) {
-	users := router.Group("/users")
+func (h *Handler) SetupRoutes() *fiber.App {
+	app := fiber.New()
 
-	users.Post("/", handler.AddUser)
-	users.Get("/", handler.List)
-	users.Get("/:id", handler.GetByID)
-	users.Get("/email/:email", handler.GetByEmail)
-	users.Put("/:id", handler.Update)
-	users.Delete("/:id", handler.Delete)
+	app.Post("/", h.AddUser)
+	app.Get("/", h.List)
+	app.Get("/:id", h.GetByID)
+	app.Get("/email/:email", h.GetByEmail)
+	app.Put("/:id", h.Update)
+	app.Delete("/:id", h.Delete)
+
+	return app
 }

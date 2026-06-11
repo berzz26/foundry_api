@@ -42,7 +42,7 @@ func (r *Repository) GetByID(ctx context.Context, id string) (*User, error) {
 	var user User
 
 	err := r.db.QueryRow(ctx, `
-	SELECT id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id, created_at, updated_at 
+	SELECT id, email, first_name, last_name, profile_image_url, created_at, updated_at 
 	FROM users 
 	WHERE id = $1
 	`, id).Scan(
@@ -50,10 +50,7 @@ func (r *Repository) GetByID(ctx context.Context, id string) (*User, error) {
 		&user.Email,
 		&user.FirstName,
 		&user.LastName,
-		&user.PasswordHash,
 		&user.ProfileImageURL,
-		&user.Provider,
-		&user.ProviderID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -62,7 +59,6 @@ func (r *Repository) GetByID(ctx context.Context, id string) (*User, error) {
 	}
 	return &user, nil
 }
-
 func (r *Repository) GetByEmail(ctx context.Context, email string) (*User, error) {
 	var user User
 
@@ -92,7 +88,7 @@ func (r *Repository) List(ctx context.Context, limit int, offset int) ([]User, e
 	var users []User
 
 	rows, err := r.db.Query(ctx, `
-	SELECT id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id, created_at, updated_at 
+	SELECT id, email, firstName, lastName, passwordHash, profileImageUrl, provider, providerId, createdAt, updatedAt 
 	FROM users 
 	ORDER BY created_at DESC
 	LIMIT $1 OFFSET $2`, limit, offset)

@@ -13,28 +13,6 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetByID(ctx context.Context, id string) (*User, error) {
-	var user User
-
-	err := r.db.QueryRow(ctx, `
-	SELECT id, email, firstName, lastName, profileImageUrl, created_at, updated_at 
-	FROM users 
-	WHERE id = $1
-	`, id).Scan(
-		&user.ID,
-		&user.Email,
-		&user.FirstName,
-		&user.LastName,
-		&user.ProfileImageURL,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
-
 func (r *Repository) AddUser(ctx context.Context, user *User) (*User, error) {
 	var addedUser User
 
@@ -60,6 +38,27 @@ func (r *Repository) AddUser(ctx context.Context, user *User) (*User, error) {
 	return &addedUser, nil
 }
 
+func (r *Repository) GetByID(ctx context.Context, id string) (*User, error) {
+	var user User
+
+	err := r.db.QueryRow(ctx, `
+	SELECT id, email, firstName, lastName, profileImageUrl, created_at, updated_at 
+	FROM users 
+	WHERE id = $1
+	`, id).Scan(
+		&user.ID,
+		&user.Email,
+		&user.FirstName,
+		&user.LastName,
+		&user.ProfileImageURL,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
 func (r *Repository) GetByEmail(ctx context.Context, email string) (*User, error) {
 	var user User
 

@@ -23,6 +23,7 @@ func NewHandler(service *Service) *Handler {
 
 func (h *Handler) AddUser(c *fiber.Ctx) error {
 	dto := new(AddUserDTO)
+
 	if err := c.BodyParser(dto); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
@@ -35,7 +36,9 @@ func (h *Handler) AddUser(c *fiber.Ctx) error {
 			"details": err.Error(),
 		})
 	}
-
+	if dto.Provider == "" {
+		dto.Provider = "local"
+	}
 	user := &User{
 		Email:           dto.Email,
 		FirstName:       dto.FirstName,

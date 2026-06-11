@@ -8,7 +8,7 @@ type AddUserDTO struct {
 	LastName        string  `json:"lastName" validate:"required"`
 	Password        string  `json:"password" validate:"required,min=8"`
 	ProfileImageURL *string `json:"profileImageUrl" validate:"omitempty,url"`
-	Provider        string  `json:"provider" validate:"required"` // e.g., "local", "google", "github"
+	Provider        string  `json:"provider"  default:"local"` // e.g., "local", "google", "github"
 	ProviderID      *string `json:"providerId" validate:"omitempty"`
 }
 

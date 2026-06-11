@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -54,6 +55,11 @@ func (h *Handler) AddUser(c *fiber.Ctx) error {
 
 	addedUser, err := h.service.AddUser(ctx, user)
 	if err != nil {
+		if errors.Is(err, ErrUserAlreadyExists) {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"error": "User already exists",
+			})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create user",
 		})
@@ -75,9 +81,13 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 
 	user, err := h.service.GetByID(ctx, id)
 	if err != nil {
-		// Typically a pgx.ErrNoRows or database error
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "User not found",
+		if errors.Is(err, ErrUserNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "User not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Internal server error",
 		})
 	}
 
@@ -97,8 +107,13 @@ func (h *Handler) GetByEmail(c *fiber.Ctx) error {
 
 	user, err := h.service.GetByEmail(ctx, email)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "User not found",
+		if errors.Is(err, ErrUserNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "User not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Internal server error",
 		})
 	}
 
@@ -118,7 +133,6 @@ func (h *Handler) List(c *fiber.Ctx) error {
 		offset = 0
 	}
 
-	// Bound limit to prevent excessive memory/performance issues
 	if limit > 100 {
 		limit = 100
 	}
@@ -168,12 +182,16 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 
 	existingUser, err := h.service.GetByID(ctx, id)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "User not found",
+		if errors.Is(err, ErrUserNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "User not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Internal server error",
 		})
 	}
 
-	// Apply partial updates
 	if dto.Email != nil {
 		existingUser.Email = *dto.Email
 	}
@@ -223,10 +241,14 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
-	// Verify user exists first
 	if _, err := h.service.GetByID(ctx, id); err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "User not found",
+		if errors.Is(err, ErrUserNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "User not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Internal server error",
 		})
 	}
 

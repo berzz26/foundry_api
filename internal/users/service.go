@@ -2,9 +2,16 @@ package users
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	ErrUserAlreadyExists = errors.New("user already exists")
+	ErrUserNotFound      = errors.New("user not found")
 )
 
 type Service struct {
@@ -16,6 +23,14 @@ func NewService(repo *Repository) *Service {
 }
 
 func (s *Service) AddUser(ctx context.Context, user *User) (*User, error) {
+	// Check if user with email already exists
+	existing, err := s.repo.GetByEmail(ctx, user.Email)
+	if err == nil && existing != nil {
+		return nil, ErrUserAlreadyExists
+	} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+
 	user.ID = uuid.New().String()
 	hashed, err := s.hashPassword(user.PasswordHash)
 	if err != nil {
@@ -26,11 +41,25 @@ func (s *Service) AddUser(ctx context.Context, user *User) (*User, error) {
 }
 
 func (s *Service) GetByID(ctx context.Context, id string) (*User, error) {
-	return s.repo.GetByID(ctx, id)
+	user, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return user, nil
 }
 
 func (s *Service) GetByEmail(ctx context.Context, email string) (*User, error) {
-	return s.repo.GetByEmail(ctx, email)
+	user, err := s.repo.GetByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return user, nil
 }
 
 func (s *Service) List(ctx context.Context, limit int, offset int) ([]User, error) {

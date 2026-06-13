@@ -114,6 +114,7 @@ func mapToResponseDTO(c *Company) CompanyResponseDTO {
 		ChildSector:       c.ChildSector,
 		Industry:          c.Industry,
 		LogoURL:           c.LogoURL,
+		SmallLogoURL:      c.SmallLogoURL,
 		Country:           c.Country,
 		FoundedAt:         c.FoundedAt,
 		LinkedinURL:       c.LinkedinURL,

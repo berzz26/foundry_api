@@ -16,16 +16,7 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-func (h *Handler) SetupRoutes() *fiber.App {
-	router := fiber.New()
 
-	router.Get("/", h.List)
-	router.Get("/featured", h.GetFeatured)
-	router.Get("/:id", h.GetByID)
-	router.Get("/:id/related", h.GetRelated)
-
-	return router
-}
 
 func (h *Handler) List(c *fiber.Ctx) error {
 	var filters JobFilters

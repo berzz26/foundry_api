@@ -16,7 +16,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-const companyFields = `id, name, slug, website, tagline, description, hiring_description, tech_stack, batch, stage, team_size, location, parent_sector, child_sector, industry, logo_url, small_logo_url, country, founded_at, linkedin_url, twitter_url, created_at, updated_at`
+const companyFields = `id, name, slug, website, tagline, description, hiring_description, tech_stack, batch, stage, team_size, location, parent_sector, child_sector, industry, logo_url, small_logo_url,logo_source_url,small_logo_source_url, country, founded_at, linkedin_url, twitter_url, created_at, updated_at`
 
 func scanCompany(row interface {
 	Scan(dest ...any) error
@@ -40,6 +40,8 @@ func scanCompany(row interface {
 		&c.Industry,
 		&c.LogoURL,
 		&c.SmallLogoURL,
+		&c.SourceLogoURL,
+		&c.SourceSmallLogoURL,
 		&c.Country,
 		&c.FoundedAt,
 		&c.LinkedinURL,

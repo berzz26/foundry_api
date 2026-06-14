@@ -18,8 +18,8 @@ type CompanyResponseDTO struct {
 	ParentSector       *string    `json:"parentSector,omitempty"`
 	ChildSector        *string    `json:"childSector,omitempty"`
 	Industry           *string    `json:"industry,omitempty"`
-	LogoURL            *string    `json:"sourceLogoUrl,omitempty"`
-	SourceLogoURL      *string    `json:"logoUrl,omitempty"`
+	LogoURL            *string    `json:"logoUrl,omitempty"`
+	SourceLogoURL      *string    `json:"sourceLogoUrl,omitempty"`
 	SmallLogoURL       *string    `json:"smallLogoUrl,omitempty"`
 	SourceSmallLogoURL *string    `json:"sourceSmallLogoUrl,omitempty"`
 	Country            *string    `json:"country,omitempty"`

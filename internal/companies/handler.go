@@ -116,7 +116,7 @@ func mapToResponseDTO(c *Company) CompanyResponseDTO {
 		LogoURL:            c.LogoURL,
 		SourceLogoURL:      c.SourceLogoURL,
 		SmallLogoURL:       c.SmallLogoURL,
-		SourceSmallLogoURL: c.SourceLogoURL,
+		SourceSmallLogoURL: c.SourceSmallLogoURL,
 		Country:            c.Country,
 		FoundedAt:          c.FoundedAt,
 		LinkedinURL:        c.LinkedinURL,

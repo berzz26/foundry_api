@@ -11,8 +11,11 @@ type CompanyCardResponse struct {
 	Stage    string `json:"stage"`
 	TeamSize int    `json:"teamSize"`
 	Location string `json:"location"`
-	Industry string `json:"industry"`
-	LogoURL  string `json:"logoUrl"`
+	Industry           string `json:"industry"`
+	LogoURL            string `json:"logoUrl"`
+	SourceLogoURL      string `json:"sourceLogoUrl"`
+	SmallLogoURL       string `json:"smallLogoUrl"`
+	SourceSmallLogoURL string `json:"sourceSmallLogoUrl"`
 }
 
 type CompanyDetailResponse struct {

@@ -37,18 +37,24 @@ func TestMapToCardResponse(t *testing.T) {
 	location := "Mountain View"
 	industry := "Search"
 	logoURL := "http://example.com/logo.png"
+	sourceLogoURL := "http://example.com/source.png"
+	smallLogoURL := "http://example.com/small.png"
+	sourceSmallLogoURL := "http://example.com/source_small.png"
 
 	comp := &Company{
-		ID:       42,
-		Name:     "Google",
-		Slug:     "google",
-		Tagline:  &tagline,
-		Batch:    &batch,
-		Stage:    &stage,
-		TeamSize: &teamSize,
-		Location: &location,
-		Industry: &industry,
-		LogoURL:  &logoURL,
+		ID:                 42,
+		Name:               "Google",
+		Slug:               "google",
+		Tagline:            &tagline,
+		Batch:              &batch,
+		Stage:              &stage,
+		TeamSize:           &teamSize,
+		Location:           &location,
+		Industry:           &industry,
+		LogoURL:            &logoURL,
+		SourceLogoURL:      &sourceLogoURL,
+		SmallLogoURL:       &smallLogoURL,
+		SourceSmallLogoURL: &sourceSmallLogoURL,
 	}
 
 	dto := mapToCardResponse(comp)
@@ -82,6 +88,15 @@ func TestMapToCardResponse(t *testing.T) {
 	}
 	if dto.LogoURL != logoURL {
 		t.Errorf("Expected logoUrl %q, got %q", logoURL, dto.LogoURL)
+	}
+	if dto.SourceLogoURL != sourceLogoURL {
+		t.Errorf("Expected sourceLogoURL %q, got %q", sourceLogoURL, dto.SourceLogoURL)
+	}
+	if dto.SmallLogoURL != smallLogoURL {
+		t.Errorf("Expected smallLogoURL %q, got %q", smallLogoURL, dto.SmallLogoURL)
+	}
+	if dto.SourceSmallLogoURL != sourceSmallLogoURL {
+		t.Errorf("Expected sourceSmallLogoURL %q, got %q", sourceSmallLogoURL, dto.SourceSmallLogoURL)
 	}
 }
 

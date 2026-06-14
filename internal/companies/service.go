@@ -116,17 +116,32 @@ func mapToCardResponse(c *Company) CompanyCardResponse {
 	if c.LogoURL != nil {
 		logoURL = *c.LogoURL
 	}
+	var sourceLogoURL string
+	if c.SourceLogoURL != nil {
+		sourceLogoURL = *c.SourceLogoURL
+	}
+	var smallLogoURL string
+	if c.SmallLogoURL != nil {
+		smallLogoURL = *c.SmallLogoURL
+	}
+	var sourceSmallLogoURL string
+	if c.SourceSmallLogoURL != nil {
+		sourceSmallLogoURL = *c.SourceSmallLogoURL
+	}
 
 	return CompanyCardResponse{
-		ID:       c.ID,
-		Name:     c.Name,
-		Slug:     c.Slug,
-		Tagline:  tagline,
-		Batch:    batch,
-		Stage:    stage,
-		TeamSize: teamSize,
-		Location: location,
-		Industry: industry,
-		LogoURL:  logoURL,
+		ID:                 c.ID,
+		Name:               c.Name,
+		Slug:               c.Slug,
+		Tagline:            tagline,
+		Batch:              batch,
+		Stage:              stage,
+		TeamSize:           teamSize,
+		Location:           location,
+		Industry:           industry,
+		LogoURL:            logoURL,
+		SourceLogoURL:      sourceLogoURL,
+		SmallLogoURL:       smallLogoURL,
+		SourceSmallLogoURL: sourceSmallLogoURL,
 	}
 }

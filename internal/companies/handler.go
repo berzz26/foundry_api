@@ -39,16 +39,11 @@ func (h *Handler) List(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
-	list, err := h.service.List(ctx, filters)
+	response, err := h.service.List(ctx, filters)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve companies",
 		})
-	}
-
-	response := make([]CompanyResponseDTO, len(list))
-	for i, comp := range list {
-		response[i] = mapToResponseDTO(&comp)
 	}
 
 	return c.JSON(response)
@@ -93,11 +88,25 @@ func (h *Handler) GetByIDOrSlug(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(mapToResponseDTO(company))
+	return c.JSON(mapToDetailResponse(company))
 }
 
-func mapToResponseDTO(c *Company) CompanyResponseDTO {
-	return CompanyResponseDTO{
+func (h *Handler) GetMeta(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
+	defer cancel()
+
+	meta, err := h.service.GetMetadata(ctx)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to retrieve metadata",
+		})
+	}
+
+	return c.JSON(meta)
+}
+
+func mapToDetailResponse(c *Company) CompanyDetailResponse {
+	return CompanyDetailResponse{
 		ID:                 c.ID,
 		Name:               c.Name,
 		Slug:               c.Slug,

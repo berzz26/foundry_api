@@ -41,7 +41,7 @@ func scanJobWithCompany(row interface{ Scan(dest ...any) error }) (*JobWithCompa
 		&j.Remote, &j.SalaryMin, &j.SalaryMax, &j.EquityMin, &j.EquityMax,
 		&j.VisaRequired, &j.JobURL, &j.CreatedAt, &j.UpdatedAt, &j.State,
 		&j.Skills, &j.ShowPath, &j.InterviewProcess, &j.TimeToHire, &j.Visa, &j.MinExperience,
-		&j.CompanyName, &j.CompanyLogo, &j.CompanyBatch,
+		&j.CompanyName, &j.CompanyLogo, &j.CompanyLogoSource, &j.CompanyBatch,
 	)
 	if err != nil {
 		return nil, err

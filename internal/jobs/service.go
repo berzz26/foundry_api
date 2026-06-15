@@ -49,7 +49,9 @@ func mapToJobCardResponse(j JobWithCompany) JobCardResponse {
 	if j.CompanyName != nil {
 		company.Name = *j.CompanyName
 	}
-	if j.CompanyLogo != nil {
+	if j.CompanyLogoSource != nil {
+		company.LogoURL = j.CompanyLogoSource
+	} else if j.CompanyLogo != nil {
 		company.LogoURL = j.CompanyLogo
 	}
 	if j.CompanyBatch != nil {
@@ -110,7 +112,9 @@ func mapToJobDetailResponse(j JobWithCompany) JobDetailResponse {
 	if j.CompanyName != nil {
 		company.Name = *j.CompanyName
 	}
-	if j.CompanyLogo != nil {
+	if j.CompanyLogoSource != nil {
+		company.LogoURL = j.CompanyLogoSource
+	} else if j.CompanyLogo != nil {
 		company.LogoURL = j.CompanyLogo
 	}
 	if j.CompanyBatch != nil {

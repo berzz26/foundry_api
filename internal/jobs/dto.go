@@ -85,5 +85,6 @@ type JobFilters struct {
 	VisaRequired *bool    `query:"visaRequired"`
 	ExperienceMin *int32  `query:"experienceMin"`
 	CompanyBatch *string  `query:"companyBatch"`
+	CompanyID    *int64   `query:"companyId"`
 	Sort         *string  `query:"sort"`
 }

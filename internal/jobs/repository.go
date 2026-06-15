@@ -116,6 +116,12 @@ func (r *Repository) List(ctx context.Context, filters JobFilters) ([]JobWithCom
 		argIndex++
 	}
 
+	if filters.CompanyID != nil {
+		conditions = append(conditions, fmt.Sprintf("j.company_id = $%d", argIndex))
+		args = append(args, *filters.CompanyID)
+		argIndex++
+	}
+
 	whereClause := ""
 	if len(conditions) > 0 {
 		whereClause = "WHERE " + strings.Join(conditions, " AND ")

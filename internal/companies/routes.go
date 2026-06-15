@@ -6,8 +6,7 @@ func (h *Handler) SetupRoutes() *fiber.App {
 	app := fiber.New()
 
 	app.Get("/", h.List)
-	app.Get("/meta", h.GetMeta)
-	app.Get("/:slug", h.GetBySlug)
+	app.Get("/:idOrSlug", h.GetByIDOrSlug)
 
 	return app
 }

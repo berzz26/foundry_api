@@ -19,9 +19,10 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 // Joined representation of a job with its company preview
 type JobWithCompany struct {
 	Job
-	CompanyName  *string
-	CompanyLogo  *string
-	CompanyBatch *string
+	CompanyName      *string
+	CompanyLogo      *string
+	CompanyLogoSource *string
+	CompanyBatch     *string
 }
 
 const jobFields = `
@@ -31,7 +32,7 @@ const jobFields = `
 	j.skills::text, j.show_path, j.interview_process, j.time_to_hire, j.visa, j.min_experience
 `
 
-const companyJoinFields = `c.name, c.logo_url, c.batch`
+const companyJoinFields = `c.name, c.logo_url, c.logo_source_url, c.batch`
 
 func scanJobWithCompany(row interface{ Scan(dest ...any) error }) (*JobWithCompany, error) {
 	var j JobWithCompany

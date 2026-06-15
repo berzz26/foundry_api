@@ -67,7 +67,7 @@ func (r *Repository) GetBySlug(ctx context.Context, slug string) (*Company, erro
 	return scanCompany(row)
 }
 
-func buildCompanyFilters(filters CompanyFilters) (string, []any, int) {
+func (r *Repository) List(ctx context.Context, filters CompanyFilters) ([]Company, error) {
 	var args []any
 	var conditions []string
 	argIndex := 1
@@ -96,26 +96,8 @@ func buildCompanyFilters(filters CompanyFilters) (string, []any, int) {
 		argIndex++
 	}
 
-	if filters.Country != nil && *filters.Country != "" {
-		conditions = append(conditions, fmt.Sprintf("country = $%d", argIndex))
-		args = append(args, *filters.Country)
-		argIndex++
-	}
-
-	if filters.MinTeamSize != nil {
-		conditions = append(conditions, fmt.Sprintf("team_size >= $%d", argIndex))
-		args = append(args, *filters.MinTeamSize)
-		argIndex++
-	}
-
-	if filters.MaxTeamSize != nil {
-		conditions = append(conditions, fmt.Sprintf("team_size <= $%d", argIndex))
-		args = append(args, *filters.MaxTeamSize)
-		argIndex++
-	}
-
 	if filters.Search != nil && *filters.Search != "" {
-		conditions = append(conditions, fmt.Sprintf("(name ILIKE $%d OR description ILIKE $%d OR tagline ILIKE $%d OR industry ILIKE $%d OR parent_sector ILIKE $%d OR child_sector ILIKE $%d)", argIndex, argIndex, argIndex, argIndex, argIndex, argIndex))
+		conditions = append(conditions, fmt.Sprintf("(name ILIKE $%d OR description ILIKE $%d OR tagline ILIKE $%d)", argIndex, argIndex, argIndex))
 		args = append(args, "%"+*filters.Search+"%")
 		argIndex++
 	}
@@ -124,12 +106,6 @@ func buildCompanyFilters(filters CompanyFilters) (string, []any, int) {
 	if len(conditions) > 0 {
 		whereClause = "WHERE " + strings.Join(conditions, " AND ")
 	}
-
-	return whereClause, args, argIndex
-}
-
-func (r *Repository) List(ctx context.Context, filters CompanyFilters) ([]Company, error) {
-	whereClause, args, argIndex := buildCompanyFilters(filters)
 
 	limit := 10
 	if filters.Limit > 0 {
@@ -144,31 +120,13 @@ func (r *Repository) List(ctx context.Context, filters CompanyFilters) ([]Compan
 		offset = filters.Offset
 	}
 
-	sortClause := "ORDER BY id DESC"
-	if filters.Sort != nil {
-		switch *filters.Sort {
-		case "newest":
-			sortClause = "ORDER BY id DESC"
-		case "oldest":
-			sortClause = "ORDER BY id ASC"
-		case "team_size_desc":
-			sortClause = "ORDER BY team_size DESC, id DESC"
-		case "team_size_asc":
-			sortClause = "ORDER BY team_size ASC, id ASC"
-		case "name_asc":
-			sortClause = "ORDER BY name ASC, id ASC"
-		case "name_desc":
-			sortClause = "ORDER BY name DESC, id DESC"
-		}
-	}
-
 	query := fmt.Sprintf(`
 		SELECT %s 
 		FROM companies 
 		%s 
-		%s 
+		ORDER BY id DESC 
 		LIMIT $%d OFFSET $%d
-	`, companyFields, whereClause, sortClause, argIndex, argIndex+1)
+	`, companyFields, whereClause, argIndex, argIndex+1)
 
 	args = append(args, limit, offset)
 
@@ -188,85 +146,4 @@ func (r *Repository) List(ctx context.Context, filters CompanyFilters) ([]Compan
 	}
 
 	return list, nil
-}
-
-func (r *Repository) Count(ctx context.Context, filters CompanyFilters) (int64, error) {
-	whereClause, args, _ := buildCompanyFilters(filters)
-
-	query := fmt.Sprintf(`
-		SELECT COUNT(*) 
-		FROM companies 
-		%s
-	`, whereClause)
-
-	var count int64
-	err := r.db.QueryRow(ctx, query, args...).Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
-func (r *Repository) GetMetadata(ctx context.Context) (*CompanyMetadataResponse, error) {
-	var batches []string
-	var industries []string
-	var stages []string
-
-	// Query batches
-	rows, err := r.db.Query(ctx, "SELECT DISTINCT batch FROM companies WHERE batch IS NOT NULL AND batch != '' ORDER BY batch DESC")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var b string
-		if err := rows.Scan(&b); err != nil {
-			return nil, err
-		}
-		batches = append(batches, b)
-	}
-
-	// Query industries
-	rowsInd, err := r.db.Query(ctx, "SELECT DISTINCT industry FROM companies WHERE industry IS NOT NULL AND industry != '' ORDER BY industry ASC")
-	if err != nil {
-		return nil, err
-	}
-	defer rowsInd.Close()
-	for rowsInd.Next() {
-		var ind string
-		if err := rowsInd.Scan(&ind); err != nil {
-			return nil, err
-		}
-		industries = append(industries, ind)
-	}
-
-	// Query stages
-	rowsStage, err := r.db.Query(ctx, "SELECT DISTINCT stage FROM companies WHERE stage IS NOT NULL AND stage != '' ORDER BY stage ASC")
-	if err != nil {
-		return nil, err
-	}
-	defer rowsStage.Close()
-	for rowsStage.Next() {
-		var s string
-		if err := rowsStage.Scan(&s); err != nil {
-			return nil, err
-		}
-		stages = append(stages, s)
-	}
-
-	if batches == nil {
-		batches = []string{}
-	}
-	if industries == nil {
-		industries = []string{}
-	}
-	if stages == nil {
-		stages = []string{}
-	}
-
-	return &CompanyMetadataResponse{
-		Batches:    batches,
-		Industries: industries,
-		Stages:     stages,
-	}, nil
 }

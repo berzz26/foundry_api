@@ -3,6 +3,7 @@ package companies
 import (
 	"context"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -38,58 +39,65 @@ func (h *Handler) List(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
-	response, err := h.service.List(ctx, filters)
+	list, err := h.service.List(ctx, filters)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve companies",
 		})
 	}
 
+	response := make([]CompanyResponseDTO, len(list))
+	for i, comp := range list {
+		response[i] = mapToResponseDTO(&comp)
+	}
+
 	return c.JSON(response)
 }
 
-func (h *Handler) GetBySlug(c *fiber.Ctx) error {
-	slug := c.Params("slug")
-	if slug == "" {
+func (h *Handler) GetByIDOrSlug(c *fiber.Ctx) error {
+	param := c.Params("idOrSlug")
+	if param == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Missing parameter Slug",
+			"error": "Missing parameter ID or Slug",
 		})
 	}
 
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
-	company, err := h.service.GetBySlug(ctx, slug)
-	if err != nil {
-		if errors.Is(err, ErrCompanyNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": "Company not found",
+	var company *Company
+	var err error
+
+	// If it parses as int64, look up by ID first
+	if id, parseErr := strconv.ParseInt(param, 10, 64); parseErr == nil {
+		company, err = h.service.GetByID(ctx, id)
+		if err != nil && !errors.Is(err, ErrCompanyNotFound) {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Internal server error",
 			})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Internal server error",
-		})
 	}
 
-	return c.JSON(mapToDetailResponse(company))
-}
-
-func (h *Handler) GetMeta(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
-	defer cancel()
-
-	meta, err := h.service.GetMetadata(ctx)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to retrieve metadata",
-		})
+	// If lookup by ID didn't find the company (or param wasn't an int), try lookup by Slug
+	if company == nil {
+		company, err = h.service.GetBySlug(ctx, param)
+		if err != nil {
+			if errors.Is(err, ErrCompanyNotFound) {
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+					"error": "Company not found",
+				})
+			}
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Internal server error",
+			})
+		}
 	}
 
-	return c.JSON(meta)
+	return c.JSON(mapToResponseDTO(company))
 }
 
-func mapToDetailResponse(c *Company) CompanyDetailResponse {
-	return CompanyDetailResponse{
+func mapToResponseDTO(c *Company) CompanyResponseDTO {
+	return CompanyResponseDTO{
 		ID:                 c.ID,
 		Name:               c.Name,
 		Slug:               c.Slug,

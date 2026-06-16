@@ -162,13 +162,14 @@ func (r *Repository) List(ctx context.Context, filters CompanyFilters) ([]Compan
 		}
 	}
 
+	listFields := fmt.Sprintf(`%s, COALESCE((SELECT COUNT(*) FROM jobs WHERE company_id = companies.id), 0) AS open_roles`, companyFields)
 	query := fmt.Sprintf(`
 		SELECT %s 
 		FROM companies 
 		%s 
 		%s 
 		LIMIT $%d OFFSET $%d
-	`, companyFields, whereClause, sortClause, argIndex, argIndex+1)
+	`, listFields, whereClause, sortClause, argIndex, argIndex+1)
 
 	args = append(args, limit, offset)
 
@@ -180,11 +181,39 @@ func (r *Repository) List(ctx context.Context, filters CompanyFilters) ([]Compan
 
 	var list []Company
 	for rows.Next() {
-		c, err := scanCompany(rows)
+		var c Company
+		err := rows.Scan(
+			&c.ID,
+			&c.Name,
+			&c.Slug,
+			&c.Website,
+			&c.Tagline,
+			&c.Description,
+			&c.HiringDescription,
+			&c.TechStack,
+			&c.Batch,
+			&c.Stage,
+			&c.TeamSize,
+			&c.Location,
+			&c.ParentSector,
+			&c.ChildSector,
+			&c.Industry,
+			&c.LogoURL,
+			&c.SmallLogoURL,
+			&c.SourceLogoURL,
+			&c.SourceSmallLogoURL,
+			&c.Country,
+			&c.FoundedAt,
+			&c.LinkedinURL,
+			&c.TwitterURL,
+			&c.CreatedAt,
+			&c.UpdatedAt,
+			&c.OpenRoles,
+		)
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, *c)
+		list = append(list, c)
 	}
 
 	return list, nil
@@ -211,6 +240,12 @@ func (r *Repository) GetMetadata(ctx context.Context) (*CompanyMetadataResponse,
 	var batches []string
 	var industries []string
 	var stages []string
+
+	var totalCompanies int64
+	err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM companies").Scan(&totalCompanies)
+	if err != nil {
+		return nil, err
+	}
 
 	// Query batches
 	rows, err := r.db.Query(ctx, "SELECT DISTINCT batch FROM companies WHERE batch IS NOT NULL AND batch != '' ORDER BY batch DESC")
@@ -265,8 +300,9 @@ func (r *Repository) GetMetadata(ctx context.Context) (*CompanyMetadataResponse,
 	}
 
 	return &CompanyMetadataResponse{
-		Batches:    batches,
-		Industries: industries,
-		Stages:     stages,
+		Batches:        batches,
+		Industries:     industries,
+		Stages:         stages,
+		TotalCompanies: totalCompanies,
 	}, nil
 }

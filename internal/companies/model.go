@@ -14,6 +14,7 @@ type Company struct {
 	Batch              *string    `json:"batch"`
 	Stage              *string    `json:"stage"`
 	TeamSize           *int32     `json:"teamSize"`
+	OpenRoles          int        `json:"openRoles"`
 	Location           *string    `json:"location"`
 	ParentSector       *string    `json:"parentSector"`
 	ChildSector        *string    `json:"childSector"`

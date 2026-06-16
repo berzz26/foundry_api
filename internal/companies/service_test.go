@@ -55,6 +55,7 @@ func TestMapToCardResponse(t *testing.T) {
 		SourceLogoURL:      &sourceLogoURL,
 		SmallLogoURL:       &smallLogoURL,
 		SourceSmallLogoURL: &sourceSmallLogoURL,
+		OpenRoles:          5,
 	}
 
 	dto := mapToCardResponse(comp)
@@ -97,6 +98,9 @@ func TestMapToCardResponse(t *testing.T) {
 	}
 	if dto.SourceSmallLogoURL != sourceSmallLogoURL {
 		t.Errorf("Expected sourceSmallLogoURL %q, got %q", sourceSmallLogoURL, dto.SourceSmallLogoURL)
+	}
+	if dto.OpenRoles != 5 {
+		t.Errorf("Expected OpenRoles 5, got %d", dto.OpenRoles)
 	}
 }
 

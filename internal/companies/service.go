@@ -135,6 +135,7 @@ func mapToCardResponse(c *Company) CompanyCardResponse {
 		Slug:               c.Slug,
 		Tagline:            tagline,
 		Batch:              batch,
+		OpenRoles:          c.OpenRoles,
 		Stage:              stage,
 		TeamSize:           teamSize,
 		Location:           location,

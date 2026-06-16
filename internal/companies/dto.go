@@ -8,6 +8,7 @@ type CompanyCardResponse struct {
 	Slug               string `json:"slug"`
 	Tagline            string `json:"tagline"`
 	Batch              string `json:"batch"`
+	OpenRoles          int    `json:"openRoles"`
 	Stage              string `json:"stage"`
 	TeamSize           int    `json:"teamSize"`
 	Location           string `json:"location"`
@@ -59,9 +60,10 @@ type CompanyListResponse struct {
 }
 
 type CompanyMetadataResponse struct {
-	Batches    []string `json:"batches"`
-	Industries []string `json:"industries"`
-	Stages     []string `json:"stages"`
+	Batches        []string `json:"batches"`
+	Industries     []string `json:"industries"`
+	Stages         []string `json:"stages"`
+	TotalCompanies int64    `json:"totalCompanies"`
 }
 
 type CompanyFilters struct {

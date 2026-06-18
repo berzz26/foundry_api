@@ -150,7 +150,7 @@ func (h *Handler) List(c *fiber.Ctx) error {
 	loggedInRole := c.Locals("user_role")
 	if loggedInRole != "admin" {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "Forbidden. Admin only.",
+			"error": "Forbidden.",
 		})
 	}
 

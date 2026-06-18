@@ -69,7 +69,10 @@ func main() {
 
 	//mount the routes
 	v1.Mount("/auth", authHandler.SetupRoutes())
-	v1.Mount("/users", userHandler.SetupRoutes())
+	// Restrict all user route group endpoints to authenticated users only
+	usersGroup := v1.Group("/users", auth.RequireAuth())
+	usersGroup.Mount("/", userHandler.SetupRoutes())
+
 	v1.Mount("/companies", companyHandler.SetupRoutes())
 	v1.Mount("/jobs", jobHandler.SetupRoutes())
 

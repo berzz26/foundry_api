@@ -97,6 +97,10 @@ func (s *Service) RefreshSession(ctx context.Context, refreshToken string) (*use
 	if err != nil {
 		return nil, "", "", errors.New("invalid refresh token")
 	}
+
+	if rt.RevokedAt != nil {
+		return nil, "", "", errors.New("refresh token has been revoked")
+	}
 	
 	_ = s.authRepo.DeleteRefreshToken(ctx, rt.ID)
 	
@@ -120,6 +124,16 @@ func (s *Service) RefreshSession(ctx context.Context, refreshToken string) (*use
 	}
 	
 	return user, newAccessToken, newRefreshToken, nil
+}
+
+func (s *Service) RevokeSession(ctx context.Context, refreshToken string) error {
+	if refreshToken == "" {
+		return nil
+	}
+	hash := sha256.Sum256([]byte(refreshToken))
+	tokenHash := hex.EncodeToString(hash[:])
+	
+	return s.authRepo.RevokeRefreshToken(ctx, tokenHash)
 }
 
 func (s *Service) Register(ctx context.Context, signupDTO *SignupDTO) (*users.User, string, string, error) {

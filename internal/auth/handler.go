@@ -142,6 +142,17 @@ func (h *Handler) Refresh(c *fiber.Ctx) error {
 }
 
 func (h *Handler) Logout(c *fiber.Ctx) error {
+	refreshToken := c.Cookies("__Secure-refresh-token")
+	if refreshToken == "" {
+		refreshToken = c.Cookies("refresh_token")
+	}
+	
+	if refreshToken != "" {
+		ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
+		defer cancel()
+		_ = h.service.RevokeSession(ctx, refreshToken)
+	}
+
 	c.ClearCookie("__Secure-token", "token", "__Secure-refresh-token", "refresh_token")
 	
 	return c.SendStatus(fiber.StatusNoContent)

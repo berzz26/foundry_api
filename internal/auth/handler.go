@@ -407,3 +407,24 @@ func mapToResponseDTO(u *users.User) users.ResponseDTO {
 		UpdatedAt:       u.UpdatedAt,
 	}
 }
+
+func (h *Handler) GetMe(c *fiber.Ctx) error {
+	userID := c.Locals("user_id")
+	if userID == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized. Please sign in.",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
+	defer cancel()
+
+	user, err := h.service.GetProfile(ctx, userID.(string))
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "User not found",
+		})
+	}
+
+	return c.JSON(mapToResponseDTO(user))
+}

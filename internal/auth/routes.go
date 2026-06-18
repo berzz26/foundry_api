@@ -8,6 +8,7 @@ func (h *Handler) SetupRoutes() *fiber.App {
 	app.Post("/signup", h.Signup)
 	app.Post("/login", h.Login)
 	app.Post("/logout", h.Logout)
+	app.Get("/me", RequireAuth(), h.GetMe)
 
 	app.Get("/google/login", h.GoogleLogin)
 	app.Get("/google/callback", h.GoogleCallback)

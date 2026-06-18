@@ -167,3 +167,7 @@ func (s *Service) GetOrCreateOAuthUser(ctx context.Context, provider, providerID
 
 	return createdUser, token, nil
 }
+
+func (s *Service) GetProfile(ctx context.Context, userID string) (*users.User, error) {
+	return s.userService.GetByID(ctx, userID)
+}

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/berzz26/foundry_api/internal/auth"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -33,9 +34,8 @@ func (h *Handler) List(c *fiber.Ctx) error {
 		filters.Offset = 0
 	}
 
-	signedIn := c.Locals("user_id") != nil
 	maxAllowed := 10
-	if signedIn {
+	if auth.HasPrivilege(c, "companies:list_50") {
 		maxAllowed = 50
 	}
 

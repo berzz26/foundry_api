@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"os"
@@ -27,6 +28,11 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
+
+	ctx := context.Background()
+	if err := auth.LoadRolePrivileges(ctx, db.DB); err != nil {
+		log.Fatalf("failed to load role privileges: %v", err)
+	}
 
 	userRepo := users.NewRepository(db.DB)
 	userService := users.NewService(userRepo)
@@ -69,15 +75,15 @@ func main() {
 
 	//mount the routes
 	v1.Mount("/auth", authHandler.SetupRoutes())
-	// Restrict all user route group endpoints to admin users only
-	usersGroup := v1.Group("/users", auth.RequireAuth(), auth.RequireRole("admin"))
+	// Restrict all user route group endpoints to authenticated users
+	usersGroup := v1.Group("/users", auth.RequireAuth())
 	usersGroup.Mount("/", userHandler.SetupRoutes())
 
 	v1.Mount("/companies", companyHandler.SetupRoutes())
 	v1.Mount("/jobs", jobHandler.SetupRoutes())
 
-	// Restrict all founder route group endpoints to authenticated users only
-	foundersGroup := v1.Group("/founders", auth.RequireAuth())
+	// Restrict all founder route group endpoints to users with founders:access privilege
+	foundersGroup := v1.Group("/founders", auth.RequireAuth(), auth.RequirePrivilege("founders:access"))
 	foundersGroup.Mount("/", founderHandler.SetupRoutes())
 
 	log.Fatal(app.Listen(":" + cfg.HTTPPort))

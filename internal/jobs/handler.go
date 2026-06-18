@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/berzz26/foundry_api/internal/auth"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -19,12 +20,12 @@ func NewHandler(service *Service) *Handler {
 
 
 func (h *Handler) List(c *fiber.Ctx) error {
-	signedIn := c.Locals("user_id") != nil
+	hasList50Privilege := auth.HasPrivilege(c, "jobs:list_50")
 
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
-	if !signedIn {
+	if !hasList50Privilege {
 		res, err := h.service.GetRandomJobs(ctx, 10)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

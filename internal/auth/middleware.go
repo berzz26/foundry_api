@@ -1,14 +1,36 @@
 package auth
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+var RolePrivileges = map[string][]string{}
+
+func LoadRolePrivileges(ctx context.Context, db *pgxpool.Pool) error {
+	rows, err := db.Query(ctx, "SELECT role::text, privilege FROM role_privileges")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	newPrivs := map[string][]string{}
+	for rows.Next() {
+		var role, privilege string
+		if err := rows.Scan(&role, &privilege); err != nil {
+			return err
+		}
+		newPrivs[role] = append(newPrivs[role], privilege)
+	}
+	RolePrivileges = newPrivs
+	return nil
+}
 
 func OptionalAuth() fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -16,6 +38,7 @@ func OptionalAuth() fiber.Handler {
 			c.Locals("user_id", "00000000-0000-0000-0000-000000000000")
 			c.Locals("user_email", "bypass-dev-user@example.com")
 			c.Locals("user_role", "admin")
+			c.Locals("user_privileges", RolePrivileges["admin"])
 			return c.Next()
 		}
 
@@ -52,6 +75,7 @@ func OptionalAuth() fiber.Handler {
 			c.Locals("user_id", claims.UserID)
 			c.Locals("user_email", claims.Email)
 			c.Locals("user_role", claims.Role)
+			c.Locals("user_privileges", RolePrivileges[claims.Role])
 		}
 
 		return c.Next()
@@ -61,43 +85,56 @@ func OptionalAuth() fiber.Handler {
 func RequireAuth() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID := c.Locals("user_id")
-		roles := c.Locals("user_role")
-		log.Print(roles)
 		if userID == nil {
-			if roles != "admin"{
-				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-					"error": "Unauthorized",
-				})
-			}
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Unauthorized",
+			})
 		}
 		return c.Next()
 	}
 }
 
-func RequireRole(allowedRoles ...string) fiber.Handler {
+func RequirePrivilege(requiredPrivilege string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		role := c.Locals("user_role")
-		if role == nil {
+		privs := c.Locals("user_privileges")
+		if privs == nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Unauthorized",
 			})
 		}
 
-		roleStr, ok := role.(string)
+		privList, ok := privs.([]string)
 		if !ok {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Internal server error. Invalid role type.",
+				"error": "Internal server error. Invalid privileges context.",
 			})
 		}
 
-		for _, r := range allowedRoles {
-			if strings.EqualFold(r, roleStr) {
+		for _, p := range privList {
+			if p == requiredPrivilege {
 				return c.Next()
 			}
 		}
 
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "Forbidden. Insufficient permissions.",
+			"error": "Forbidden",
 		})
 	}
+}
+
+func HasPrivilege(c *fiber.Ctx, privilege string) bool {
+	privs := c.Locals("user_privileges")
+	if privs == nil {
+		return false
+	}
+	privList, ok := privs.([]string)
+	if !ok {
+		return false
+	}
+	for _, p := range privList {
+		if p == privilege {
+			return true
+		}
+	}
+	return false
 }

@@ -47,7 +47,7 @@ func (r *Repository) GetByID(ctx context.Context, id string) (*User, error) {
 	var user User
 
 	err := r.db.QueryRow(ctx, `
-	SELECT id, email, first_name, last_name, profile_image_url, role, created_at, updated_at 
+	SELECT id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id, role, created_at, updated_at 
 	FROM users 
 	WHERE id = $1
 	`, id).Scan(
@@ -55,7 +55,10 @@ func (r *Repository) GetByID(ctx context.Context, id string) (*User, error) {
 		&user.Email,
 		&user.FirstName,
 		&user.LastName,
+		&user.PasswordHash,
 		&user.ProfileImageURL,
+		&user.Provider,
+		&user.ProviderID,
 		&user.Role,
 		&user.CreatedAt,
 		&user.UpdatedAt,

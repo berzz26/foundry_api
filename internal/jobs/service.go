@@ -228,3 +228,25 @@ func (s *Service) GetFeatured(ctx context.Context) (*JobFeaturedResponse, error)
 
 	return &JobFeaturedResponse{Jobs: cards}, nil
 }
+
+func (s *Service) GetRandomJobs(ctx context.Context, limit int) (*JobListResponse, error) {
+	jobs, err := s.repo.GetRandomJobs(ctx, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	cards := make([]JobCardResponse, 0, len(jobs))
+	for _, j := range jobs {
+		cards = append(cards, mapToJobCardResponse(j))
+	}
+
+	return &JobListResponse{
+		Jobs: cards,
+		Pagination: PaginationResponse{
+			Page:    1,
+			Limit:   limit,
+			Total:   limit,
+			HasNext: false,
+		},
+	}, nil
+}

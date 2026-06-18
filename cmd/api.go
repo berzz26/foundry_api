@@ -5,6 +5,7 @@ import (
 
 	"os"
 
+	"github.com/berzz26/foundry_api/internal/auth"
 	"github.com/berzz26/foundry_api/internal/companies"
 	"github.com/berzz26/foundry_api/internal/founders"
 	"github.com/berzz26/foundry_api/internal/jobs"
@@ -43,6 +44,9 @@ func main() {
 	founderService := founders.NewService(founderRepo)
 	founderHandler := founders.NewHandler(founderService)
 
+	authService := auth.NewService(userService)
+	authHandler := auth.NewHandler(authService, cfg)
+
 	app := fiber.New()
 	app.Use(recover.New())
 
@@ -60,11 +64,18 @@ func main() {
 	api := app.Group("/api")
 	v1 := api.Group("/v1")
 
+	// Apply optional auth parsing globally to all v1 endpoints
+	v1.Use(auth.OptionalAuth())
+
 	//mount the routes
+	v1.Mount("/auth", authHandler.SetupRoutes())
 	v1.Mount("/users", userHandler.SetupRoutes())
 	v1.Mount("/companies", companyHandler.SetupRoutes())
 	v1.Mount("/jobs", jobHandler.SetupRoutes())
-	v1.Mount("/founders", founderHandler.SetupRoutes())
+
+	// Restrict all founder route group endpoints to authenticated users only
+	foundersGroup := v1.Group("/founders", auth.RequireAuth())
+	foundersGroup.Mount("/", founderHandler.SetupRoutes())
 
 	log.Fatal(app.Listen(":" + cfg.HTTPPort))
 

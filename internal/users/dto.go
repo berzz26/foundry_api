@@ -20,6 +20,7 @@ type UpdateUserDTO struct {
 	ProfileImageURL *string `json:"profileImageUrl" validate:"omitempty,url"`
 	Provider        *string `json:"provider" validate:"omitempty"`
 	ProviderID      *string `json:"providerId" validate:"omitempty"`
+	Role            *string `json:"role" validate:"omitempty"`
 }
 
 type ResponseDTO struct {
@@ -30,6 +31,7 @@ type ResponseDTO struct {
 	ProfileImageURL *string   `json:"profileImageUrl,omitempty"`
 	Provider        string    `json:"provider"`
 	ProviderID      *string   `json:"providerId,omitempty"`
+	Role            string    `json:"role"`
 	CreatedAt       time.Time `json:"createdAt"`
 	UpdatedAt       time.Time `json:"updatedAt"`
 }

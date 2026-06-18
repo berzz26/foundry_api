@@ -76,6 +76,19 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 		})
 	}
 
+	loggedInID := c.Locals("user_id")
+	loggedInRole := c.Locals("user_role")
+	if loggedInID == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+	if loggedInRole != "admin" && loggedInID.(string) != id {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Forbidden. Insufficient permissions.",
+		})
+	}
+
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
@@ -102,6 +115,19 @@ func (h *Handler) GetByEmail(c *fiber.Ctx) error {
 		})
 	}
 
+	loggedInEmail := c.Locals("user_email")
+	loggedInRole := c.Locals("user_role")
+	if loggedInEmail == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+	if loggedInRole != "admin" && loggedInEmail.(string) != email {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Forbidden. Insufficient permissions.",
+		})
+	}
+
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
@@ -121,6 +147,13 @@ func (h *Handler) GetByEmail(c *fiber.Ctx) error {
 }
 
 func (h *Handler) List(c *fiber.Ctx) error {
+	loggedInRole := c.Locals("user_role")
+	if loggedInRole != "admin" {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Forbidden. Admin only.",
+		})
+	}
+
 	limitStr := c.Query("limit", "10")
 	offsetStr := c.Query("offset", "0")
 
@@ -160,6 +193,19 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	if id == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Missing user ID parameter",
+		})
+	}
+
+	loggedInID := c.Locals("user_id")
+	loggedInRole := c.Locals("user_role")
+	if loggedInID == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+	if loggedInRole != "admin" && loggedInID.(string) != id {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Forbidden. Insufficient permissions.",
 		})
 	}
 
@@ -219,6 +265,14 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	if dto.ProviderID != nil {
 		existingUser.ProviderID = dto.ProviderID
 	}
+	if dto.Role != nil {
+		if loggedInRole != "admin" {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"error": "Forbidden. Only admins can modify user roles.",
+			})
+		}
+		existingUser.Role = *dto.Role
+	}
 
 	updatedUser, err := h.service.Update(ctx, existingUser)
 	if err != nil {
@@ -235,6 +289,19 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 	if id == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Missing user ID parameter",
+		})
+	}
+
+	loggedInID := c.Locals("user_id")
+	loggedInRole := c.Locals("user_role")
+	if loggedInID == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+	if loggedInRole != "admin" && loggedInID.(string) != id {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Forbidden. Insufficient permissions.",
 		})
 	}
 
@@ -270,6 +337,7 @@ func mapToResponseDTO(u *User) ResponseDTO {
 		ProfileImageURL: u.ProfileImageURL,
 		Provider:        u.Provider,
 		ProviderID:      u.ProviderID,
+		Role:            u.Role,
 		CreatedAt:       u.CreatedAt,
 		UpdatedAt:       u.UpdatedAt,
 	}

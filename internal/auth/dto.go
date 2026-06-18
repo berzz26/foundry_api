@@ -15,6 +15,11 @@ type SignupDTO struct {
 }
 
 type AuthResponseDTO struct {
-	Token string            `json:"token"`
-	User  users.ResponseDTO `json:"user"`
+	Token        string            `json:"token"`
+	RefreshToken string            `json:"refreshToken"`
+	User         users.ResponseDTO `json:"user"`
+}
+
+type RefreshTokenRequestDTO struct {
+	RefreshToken string `json:"refreshToken" validate:"required"`
 }

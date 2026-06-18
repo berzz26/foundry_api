@@ -50,7 +50,8 @@ func main() {
 	founderService := founders.NewService(founderRepo)
 	founderHandler := founders.NewHandler(founderService)
 
-	authService := auth.NewService(userService)
+	authRepo := auth.NewRepository(db.DB)
+	authService := auth.NewService(userService, authRepo)
 	authHandler := auth.NewHandler(authService, cfg)
 
 	app := fiber.New()

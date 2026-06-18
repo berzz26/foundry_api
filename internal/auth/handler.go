@@ -47,7 +47,7 @@ func (h *Handler) Signup(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
-	createdUser, err := h.service.Register(ctx, dto)
+	createdUser, token, refreshToken, err := h.service.Register(ctx, dto)
 	if err != nil {
 		if errors.Is(err, users.ErrUserAlreadyExists) {
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
@@ -59,7 +59,13 @@ func (h *Handler) Signup(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(mapToResponseDTO(createdUser))
+	h.setAuthCookie(c, token, refreshToken)
+
+	return c.Status(fiber.StatusCreated).JSON(AuthResponseDTO{
+		Token:        token,
+		RefreshToken: refreshToken,
+		User:         mapToResponseDTO(createdUser),
+	})
 }
 
 func (h *Handler) Login(c *fiber.Ctx) error {
@@ -80,7 +86,7 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
-	user, token, err := h.service.Login(ctx, dto.Email, dto.Password)
+	user, token, refreshToken, err := h.service.Login(ctx, dto.Email, dto.Password)
 	if err != nil {
 		if errors.Is(err, ErrInvalidCredentials) {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -92,16 +98,52 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	h.setAuthCookie(c, token)
+	h.setAuthCookie(c, token, refreshToken)
 
 	return c.JSON(AuthResponseDTO{
-		Token: token,
-		User:  mapToResponseDTO(user),
+		Token:        token,
+		RefreshToken: refreshToken,
+		User:         mapToResponseDTO(user),
+	})
+}
+
+func (h *Handler) Refresh(c *fiber.Ctx) error {
+	dto := new(RefreshTokenRequestDTO)
+	if err := c.BodyParser(dto); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+	
+	if err := validate.Struct(dto); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "Validation failed",
+			"details": err.Error(),
+		})
+	}
+	
+	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
+	defer cancel()
+	
+	user, token, refreshToken, err := h.service.RefreshSession(ctx, dto.RefreshToken)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid or expired refresh token",
+		})
+	}
+	
+	h.setAuthCookie(c, token, refreshToken)
+	
+	return c.JSON(AuthResponseDTO{
+		Token:        token,
+		RefreshToken: refreshToken,
+		User:         mapToResponseDTO(user),
 	})
 }
 
 func (h *Handler) Logout(c *fiber.Ctx) error {
-	c.ClearCookie("__Secure-token", "token")
+	c.ClearCookie("__Secure-token", "token", "__Secure-refresh-token", "refresh_token")
+	
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
@@ -194,7 +236,7 @@ func (h *Handler) GoogleCallback(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
-	_, token, err := h.service.GetOrCreateOAuthUser(
+	_, token, refreshToken, err := h.service.GetOrCreateOAuthUser(
 		ctx,
 		"google",
 		userInfo.ID,
@@ -209,7 +251,7 @@ func (h *Handler) GoogleCallback(c *fiber.Ctx) error {
 		})
 	}
 
-	h.setAuthCookie(c, token)
+	h.setAuthCookie(c, token, refreshToken)
 
 	return c.Redirect(redirectTarget, fiber.StatusTemporaryRedirect)
 }
@@ -345,7 +387,7 @@ func (h *Handler) GithubCallback(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
-	_, token, err := h.service.GetOrCreateOAuthUser(
+	_, token, refreshToken, err := h.service.GetOrCreateOAuthUser(
 		ctx,
 		"github",
 		strconv.Itoa(githubInfo.ID),
@@ -360,12 +402,12 @@ func (h *Handler) GithubCallback(c *fiber.Ctx) error {
 		})
 	}
 
-	h.setAuthCookie(c, token)
+	h.setAuthCookie(c, token, refreshToken)
 
 	return c.Redirect(redirectTarget, fiber.StatusTemporaryRedirect)
 }
 
-func (h *Handler) setAuthCookie(c *fiber.Ctx, token string) {
+func (h *Handler) setAuthCookie(c *fiber.Ctx, token string, refreshToken string) {
 	secure := false
 	if os.Getenv("APP_ENV") == "production" {
 		secure = true
@@ -374,7 +416,17 @@ func (h *Handler) setAuthCookie(c *fiber.Ctx, token string) {
 	c.Cookie(&fiber.Cookie{
 		Name:     "__Secure-token",
 		Value:    token,
-		Expires:  time.Now().Add(24 * time.Hour),
+		Expires:  time.Now().Add(10 * time.Minute),
+		HTTPOnly: true,
+		Secure:   secure,
+		SameSite: "Lax",
+		Path:     "/",
+	})
+	
+	c.Cookie(&fiber.Cookie{
+		Name:     "__Secure-refresh-token",
+		Value:    refreshToken,
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		HTTPOnly: true,
 		Secure:   secure,
 		SameSite: "Lax",
@@ -385,7 +437,17 @@ func (h *Handler) setAuthCookie(c *fiber.Ctx, token string) {
 	c.Cookie(&fiber.Cookie{
 		Name:     "token",
 		Value:    token,
-		Expires:  time.Now().Add(24 * time.Hour),
+		Expires:  time.Now().Add(10 * time.Minute),
+		HTTPOnly: true,
+		Secure:   false,
+		SameSite: "Lax",
+		Path:     "/",
+	})
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		HTTPOnly: true,
 		Secure:   false,
 		SameSite: "Lax",

@@ -3,6 +3,8 @@ package auth
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -44,10 +46,11 @@ type Claims struct {
 
 type Service struct {
 	userService *users.Service
+	authRepo    *Repository
 }
 
-func NewService(userService *users.Service) *Service {
-	return &Service{userService: userService}
+func NewService(userService *users.Service, authRepo *Repository) *Service {
+	return &Service{userService: userService, authRepo: authRepo}
 }
 
 func (s *Service) GenerateToken(user *users.User) (string, error) {
@@ -56,7 +59,7 @@ func (s *Service) GenerateToken(user *users.User) (string, error) {
 		Email:  user.Email,
 		Role:   user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(10 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Subject:   user.ID,
 		},
@@ -66,7 +69,60 @@ func (s *Service) GenerateToken(user *users.User) (string, error) {
 	return token.SignedString(jwtSecret)
 }
 
-func (s *Service) Register(ctx context.Context, signupDTO *SignupDTO) (*users.User, error) {
+func (s *Service) GenerateRefreshToken(ctx context.Context, userID string) (string, error) {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	//never store the raw refresh token in the db
+	refreshToken := hex.EncodeToString(b)
+	
+	hash := sha256.Sum256([]byte(refreshToken))
+	tokenHash := hex.EncodeToString(hash[:])
+	//refresh tokens expire after a week, user logs out
+	expiresAt := time.Now().Add(7 * 24 * time.Hour)
+	err = s.authRepo.CreateRefreshToken(ctx, userID, tokenHash, expiresAt)
+	if err != nil {
+		return "", err
+	}
+	return refreshToken, nil
+}
+
+func (s *Service) RefreshSession(ctx context.Context, refreshToken string) (*users.User, string, string, error) {
+	hash := sha256.Sum256([]byte(refreshToken))
+	tokenHash := hex.EncodeToString(hash[:])
+	
+	rt, err := s.authRepo.GetRefreshTokenByHash(ctx, tokenHash)
+	if err != nil {
+		return nil, "", "", errors.New("invalid refresh token")
+	}
+	
+	_ = s.authRepo.DeleteRefreshToken(ctx, rt.ID)
+	
+	if time.Now().After(rt.ExpiresAt) {
+		return nil, "", "", errors.New("refresh token expired")
+	}
+	
+	user, err := s.userService.GetByID(ctx, rt.UserID)
+	if err != nil {
+		return nil, "", "", errors.New("user not found")
+	}
+	
+	newAccessToken, err := s.GenerateToken(user)
+	if err != nil {
+		return nil, "", "", err
+	}
+	
+	newRefreshToken, err := s.GenerateRefreshToken(ctx, user.ID)
+	if err != nil {
+		return nil, "", "", err
+	}
+	
+	return user, newAccessToken, newRefreshToken, nil
+}
+
+func (s *Service) Register(ctx context.Context, signupDTO *SignupDTO) (*users.User, string, string, error) {
 	user := &users.User{
 		Email:     signupDTO.Email,
 		FirstName: signupDTO.FirstName,
@@ -76,37 +132,57 @@ func (s *Service) Register(ctx context.Context, signupDTO *SignupDTO) (*users.Us
 		Role:      "user",
 	}
 
-	return s.userService.AddUser(ctx, user)
+	createdUser, err := s.userService.AddUser(ctx, user)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	token, err := s.GenerateToken(createdUser)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	refreshToken, err := s.GenerateRefreshToken(ctx, createdUser.ID)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	return createdUser, token, refreshToken, nil
 }
 
-func (s *Service) Login(ctx context.Context, email, password string) (*users.User, string, error) {
+func (s *Service) Login(ctx context.Context, email, password string) (*users.User, string, string, error) {
 	user, err := s.userService.GetByEmail(ctx, email)
 	if err != nil {
-		return nil, "", ErrInvalidCredentials
+		return nil, "", "", ErrInvalidCredentials
 	}
 
 	if user.Provider != "local" && user.Provider != "credentials" && user.Provider != "" {
-		return nil, "", fmt.Errorf("this account uses %s authentication. Please sign in via OAuth.", user.Provider)
+		return nil, "", "", fmt.Errorf("this account uses %s authentication. Please sign in via OAuth.", user.Provider)
 	}
 
 	if !s.userService.VerifyPassword(user.PasswordHash, password) {
-		return nil, "", ErrInvalidCredentials
+		return nil, "", "", ErrInvalidCredentials
 	}
 
 	token, err := s.GenerateToken(user)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
-	return user, token, nil
+	refreshToken, err := s.GenerateRefreshToken(ctx, user.ID)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	return user, token, refreshToken, nil
 }
 
-func (s *Service) GetOrCreateOAuthUser(ctx context.Context, provider, providerID, email, firstName, lastName, avatarURL string) (*users.User, string, error) {
+func (s *Service) GetOrCreateOAuthUser(ctx context.Context, provider, providerID, email, firstName, lastName, avatarURL string) (*users.User, string, string, error) {
 	existingUser, err := s.userService.GetByEmail(ctx, email)
 	if err == nil && existingUser != nil {
 		// User already exists. Verify provider matches or link it
 		if existingUser.Provider != provider && existingUser.ProviderID != nil && *existingUser.ProviderID != providerID {
-			return nil, "", ErrOAuthProviderMismatch
+			return nil, "", "", ErrOAuthProviderMismatch
 		}
 
 		// Update provider details if they were local or empty
@@ -127,15 +203,19 @@ func (s *Service) GetOrCreateOAuthUser(ctx context.Context, provider, providerID
 		if needsUpdate {
 			existingUser, err = s.userService.Update(ctx, existingUser)
 			if err != nil {
-				return nil, "", err
+				return nil, "", "", err
 			}
 		}
 
 		token, err := s.GenerateToken(existingUser)
 		if err != nil {
-			return nil, "", err
+			return nil, "", "", err
 		}
-		return existingUser, token, nil
+		refreshToken, err := s.GenerateRefreshToken(ctx, existingUser.ID)
+		if err != nil {
+			return nil, "", "", err
+		}
+		return existingUser, token, refreshToken, nil
 	}
 
 	// Create new OAuth user
@@ -157,15 +237,20 @@ func (s *Service) GetOrCreateOAuthUser(ctx context.Context, provider, providerID
 
 	createdUser, err := s.userService.AddUser(ctx, newUser)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
 	token, err := s.GenerateToken(createdUser)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
-	return createdUser, token, nil
+	refreshToken, err := s.GenerateRefreshToken(ctx, createdUser.ID)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	return createdUser, token, refreshToken, nil
 }
 
 func (s *Service) GetProfile(ctx context.Context, userID string) (*users.User, error) {

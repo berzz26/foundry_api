@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/berzz26/foundry_api/internal/companies"
+	"github.com/berzz26/foundry_api/internal/founders"
 	"github.com/berzz26/foundry_api/internal/jobs"
 	"github.com/berzz26/foundry_api/internal/users"
 	"github.com/berzz26/foundry_api/pkg/config"
@@ -34,6 +35,10 @@ func main() {
 	jobService := jobs.NewService(jobRepo)
 	jobHandler := jobs.NewHandler(jobService)
 
+	founderRepo := founders.NewRepository(db.DB)
+	founderService := founders.NewService(founderRepo)
+	founderHandler := founders.NewHandler(founderService)
+
 	app := fiber.New()
 	app.Use(cors.New(cors.Config{
     AllowOrigins: "http://localhost:3001",
@@ -47,6 +52,7 @@ func main() {
 	v1.Mount("/users", userHandler.SetupRoutes())
 	v1.Mount("/companies", companyHandler.SetupRoutes())
 	v1.Mount("/jobs", jobHandler.SetupRoutes())
+	v1.Mount("/founders", founderHandler.SetupRoutes())
 
 	log.Fatal(app.Listen(":" + cfg.HTTPPort))
 

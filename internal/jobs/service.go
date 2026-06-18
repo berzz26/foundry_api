@@ -59,15 +59,17 @@ func mapToJobCardResponse(j JobWithCompany) JobCardResponse {
 	}
 
 	return JobCardResponse{
-		ID:         j.ID,
-		Title:      j.Title,
-		Location:   j.Location,
-		Remote:     remote,
-		Salary:     salary,
-		Equity:     equity,
-		Experience: experience,
-		Company:    company,
-		CreatedAt:  j.CreatedAt,
+		ID:               j.ID,
+		Title:            j.Title,
+		Location:         j.Location,
+		Remote:           remote,
+		Salary:           salary,
+		Equity:           equity,
+		Experience:       experience,
+		Company:          company,
+		InterviewProcess: j.InterviewProcess,
+		PrettyEngType:    j.PrettyEngType,
+		CreatedAt:        j.CreatedAt,
 	}
 }
 
@@ -141,6 +143,7 @@ func mapToJobDetailResponse(j JobWithCompany) JobDetailResponse {
 		VisaRequired:     visaRequired,
 		Skills:           skills,
 		InterviewProcess: j.InterviewProcess,
+		PrettyEngType:    j.PrettyEngType,
 		TimeToHire:       j.TimeToHire,
 		Company:          company,
 		CreatedAt:        j.CreatedAt,

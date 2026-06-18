@@ -3,15 +3,17 @@ package jobs
 import "time"
 
 type JobCardResponse struct {
-	ID         int64                  `json:"id"`
-	Title      string                 `json:"title"`
-	Location   *string                `json:"location"`
-	Remote     bool                   `json:"remote"`
-	Salary     *SalaryResponse        `json:"salary,omitempty"`
-	Equity     *EquityResponse        `json:"equity,omitempty"`
-	Experience *ExperienceResponse    `json:"experience,omitempty"`
-	Company    CompanyPreviewResponse `json:"company"`
-	CreatedAt  *time.Time             `json:"createdAt,omitempty"`
+	ID               int64                  `json:"id"`
+	Title            string                 `json:"title"`
+	Location         *string                `json:"location"`
+	Remote           bool                   `json:"remote"`
+	Salary           *SalaryResponse        `json:"salary,omitempty"`
+	Equity           *EquityResponse        `json:"equity,omitempty"`
+	Experience       *ExperienceResponse    `json:"experience,omitempty"`
+	Company          CompanyPreviewResponse `json:"company"`
+	InterviewProcess *string                `json:"interview_process,omitempty"`
+	PrettyEngType    *string                `json:"pretty_eng_type,omitempty"`
+	CreatedAt        *time.Time             `json:"createdAt,omitempty"`
 }
 
 type JobDetailResponse struct {
@@ -25,7 +27,8 @@ type JobDetailResponse struct {
 	Experience       *ExperienceResponse    `json:"experience,omitempty"`
 	VisaRequired     bool                   `json:"visaRequired"`
 	Skills           []string               `json:"skills"`
-	InterviewProcess *string                `json:"interviewProcess,omitempty"`
+	InterviewProcess *string                `json:"interview_process,omitempty"`
+	PrettyEngType    *string                `json:"pretty_eng_type,omitempty"`
 	TimeToHire       *int32                 `json:"timeToHire,omitempty"`
 	Company          CompanyPreviewResponse `json:"company"`
 	CreatedAt        *time.Time             `json:"createdAt,omitempty"`

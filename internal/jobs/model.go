@@ -28,4 +28,5 @@ type Job struct {
 	TimeToHire       *int32     `json:"timeToHire"`
 	Visa             *string    `json:"visa"`
 	MinExperience    *int32     `json:"minExperience"`
+	PrettyEngType    *string    `json:"prettyEngType"`
 }

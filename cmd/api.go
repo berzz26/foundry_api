@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 
+	"os"
+
 	"github.com/berzz26/foundry_api/internal/companies"
 	"github.com/berzz26/foundry_api/internal/founders"
 	"github.com/berzz26/foundry_api/internal/jobs"
@@ -12,6 +14,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 func main() {
@@ -40,14 +44,22 @@ func main() {
 	founderHandler := founders.NewHandler(founderService)
 
 	app := fiber.New()
+	app.Use(recover.New())
+
+	if os.Getenv("DEV") != "" || os.Getenv("APP_ENV") == "development" || os.Getenv("APP_ENV") == "dev" {
+		app.Use(logger.New(logger.Config{
+			Format: "[${time}] ${status} - ${latency} ${method} ${path}\n",
+		}))
+	}
+
 	app.Use(cors.New(cors.Config{
-    AllowOrigins: "http://localhost:3001",
-    AllowMethods: "GET,POST,PUT,DELETE",
-    AllowHeaders: "Origin,Content-Type,Accept,Authorization",
-}))
+		AllowOrigins: "http://localhost:3001",
+		AllowMethods: "GET,POST,PUT,DELETE",
+		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
+	}))
 	api := app.Group("/api")
 	v1 := api.Group("/v1")
-	
+
 	//mount the routes
 	v1.Mount("/users", userHandler.SetupRoutes())
 	v1.Mount("/companies", companyHandler.SetupRoutes())

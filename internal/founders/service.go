@@ -33,7 +33,9 @@ func (s *Service) GetByID(ctx context.Context, id int64) (*Founder, error) {
 	}
 	return founder, nil
 }
-
+func (s *Service) GetByCompanyID(ctx context.Context, companyId int64) ([]Founder, error) {
+	return s.repo.GetByCompanyID(ctx, companyId)
+}
 func (s *Service) List(ctx context.Context, companyID *int64, limit, offset int) ([]Founder, error) {
 	return s.repo.List(ctx, companyID, limit, offset)
 }

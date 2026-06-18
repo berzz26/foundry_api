@@ -3,6 +3,7 @@ package founders
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,9 +17,31 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-const founderFields = `id, company_id, full_name, first_name, last_name, bio, linkedin, twitter, avatar_url, avatar_thumb, avatar_medium, created_at, updated_at`
+const founderFields = `id, company_id, full_name, first_name, last_name, linkedin, twitter, avatar_url, avatar_thumb, avatar_medium`
+const founderFieldsAll = `id, company_id, full_name, first_name, last_name, bio, linkedin, twitter, avatar_url, avatar_thumb, avatar_medium`
 
 func scanFounder(row interface {
+	Scan(dest ...any) error
+}) (*Founder, error) {
+	var f Founder
+	err := row.Scan(
+		&f.ID,
+		&f.CompanyID,
+		&f.FullName,
+		&f.FirstName,
+		&f.LastName,
+		&f.Linkedin,
+		&f.Twitter,
+		&f.AvatarURL,
+		&f.AvatarThumb,
+		&f.AvatarMedium,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &f, nil
+}
+func scanFounderAll(row interface {
 	Scan(dest ...any) error
 }) (*Founder, error) {
 	var f Founder
@@ -34,8 +57,7 @@ func scanFounder(row interface {
 		&f.AvatarURL,
 		&f.AvatarThumb,
 		&f.AvatarMedium,
-		&f.CreatedAt,
-		&f.UpdatedAt,
+		
 	)
 	if err != nil {
 		return nil, err
@@ -75,11 +97,31 @@ func (r *Repository) Create(ctx context.Context, f *Founder) (*Founder, error) {
 }
 
 func (r *Repository) GetByID(ctx context.Context, id int64) (*Founder, error) {
-	query := fmt.Sprintf(`SELECT %s FROM founders WHERE id = $1`, founderFields)
+	query := fmt.Sprintf(`SELECT %s FROM founders WHERE id = $1`, founderFieldsAll)
 	row := r.db.QueryRow(ctx, query, id)
-	return scanFounder(row)
+	return scanFounderAll(row)
 }
-
+func (r *Repository) GetByCompanyID(ctx context.Context, companyId int64) ([]Founder, error) {
+	query := fmt.Sprintf(`SELECT %s FROM founders WHERE company_id = $1`, founderFieldsAll)
+	rows, err := r.db.Query(ctx, query, companyId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var list []Founder
+	for rows.Next() {
+		f, err := scanFounderAll(rows)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		list = append(list, *f)
+	}
+	if len(list) == 0 {
+		return nil, ErrFounderNotFound
+	}
+	return list, nil
+}
 func (r *Repository) List(ctx context.Context, companyID *int64, limit, offset int) ([]Founder, error) {
 	var args []any
 	var conditions []string

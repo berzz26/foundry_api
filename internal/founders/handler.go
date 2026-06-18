@@ -3,6 +3,7 @@ package founders
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -88,6 +89,7 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 
 	founder, err := h.service.GetByID(ctx, id)
 	if err != nil {
+		log.Println(err)
 		if errors.Is(err, ErrFounderNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"error": "Founder not found",
@@ -100,7 +102,38 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 
 	return c.JSON(mapToResponseDTO(founder))
 }
+func (h *Handler) GetByCompanyID(c *fiber.Ctx) error {
+	companyIDStr := c.Params("companyId")
+	if companyIDStr == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Missing company ID parameter",
+		})
+	}
 
+	companyID, err := strconv.ParseInt(companyIDStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid company ID format",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
+	defer cancel()
+
+	founders, err := h.service.GetByCompanyID(ctx, companyID)
+	if err != nil {
+		if errors.Is(err, ErrFounderNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "Founder not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Internal server error",
+		})
+	}
+
+	return c.JSON(founders)
+}
 func (h *Handler) List(c *fiber.Ctx) error {
 	limitStr := c.Query("limit", "10")
 	offsetStr := c.Query("offset", "0")

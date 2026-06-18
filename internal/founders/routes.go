@@ -8,6 +8,7 @@ func (h *Handler) SetupRoutes() *fiber.App {
 	
 	app.Get("/", h.List)
 	app.Get("/:id", h.GetByID)
+	app.Get("/company/:companyId", h.GetByCompanyID)
 	app.Put("/:id", h.Update)
 	app.Delete("/:id", h.Delete)
 

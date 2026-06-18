@@ -268,7 +268,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	if dto.Role != nil {
 		if loggedInRole != "admin" {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"error": "Forbidden. Only admins can modify user roles.",
+				"error": "Forbidden.",
 			})
 		}
 		existingUser.Role = *dto.Role

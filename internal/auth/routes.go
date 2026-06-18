@@ -16,5 +16,5 @@ func (h *Handler) SetupRoutes() *fiber.App {
 	app.Get("/github/login", h.GithubLogin)
 	app.Get("/github/callback", h.GithubCallback)
 
-	return app
+	return app	
 }

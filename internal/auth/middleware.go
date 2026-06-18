@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -60,10 +61,14 @@ func OptionalAuth() fiber.Handler {
 func RequireAuth() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID := c.Locals("user_id")
+		roles := c.Locals("user_role")
+		log.Print(roles)
 		if userID == nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Unauthorized. Please sign in to access this resource.",
-			})
+			if roles != "admin"{
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Unauthorized",
+				})
+			}
 		}
 		return c.Next()
 	}
@@ -74,7 +79,7 @@ func RequireRole(allowedRoles ...string) fiber.Handler {
 		role := c.Locals("user_role")
 		if role == nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Unauthorized. Role validation failed.",
+				"error": "Unauthorized",
 			})
 		}
 

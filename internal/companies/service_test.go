@@ -106,11 +106,21 @@ func TestMapToCardResponse(t *testing.T) {
 
 func TestMapToDetailResponse(t *testing.T) {
 	tagline := "Google Search"
+	desc := "Search engine giant"
+	hiringDesc := "We are hiring software engineers"
+	linkedin := "https://linkedin.com/company/google"
+	twitter := "https://twitter.com/google"
+	facebook := "https://facebook.com/google"
 	comp := &Company{
-		ID:      42,
-		Name:    "Google",
-		Slug:    "google",
-		Tagline: &tagline,
+		ID:                42,
+		Name:              "Google",
+		Slug:              "google",
+		Tagline:           &tagline,
+		Description:       &desc,
+		HiringDescription: &hiringDesc,
+		LinkedinURL:       &linkedin,
+		TwitterURL:        &twitter,
+		FacebookURL:       &facebook,
 	}
 
 	dto := mapToDetailResponse(comp)
@@ -126,5 +136,20 @@ func TestMapToDetailResponse(t *testing.T) {
 	}
 	if dto.Tagline == nil || *dto.Tagline != tagline {
 		t.Errorf("Expected tagline %q", tagline)
+	}
+	if dto.CompanyDescription == nil || *dto.CompanyDescription != desc {
+		t.Errorf("Expected companyDescription %q", desc)
+	}
+	if dto.HiringDescription == nil || *dto.HiringDescription != hiringDesc {
+		t.Errorf("Expected hiringDescription %q", hiringDesc)
+	}
+	if dto.LinkedinURL == nil || *dto.LinkedinURL != linkedin {
+		t.Errorf("Expected linkedinUrl %q", linkedin)
+	}
+	if dto.TwitterURL == nil || *dto.TwitterURL != twitter {
+		t.Errorf("Expected twitterUrl %q", twitter)
+	}
+	if dto.FacebookURL == nil || *dto.FacebookURL != facebook {
+		t.Errorf("Expected facebookUrl %q", facebook)
 	}
 }

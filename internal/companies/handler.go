@@ -112,7 +112,7 @@ func mapToDetailResponse(c *Company) CompanyDetailResponse {
 		Slug:               c.Slug,
 		Website:            c.Website,
 		Tagline:            c.Tagline,
-		Description:        c.Description,
+		CompanyDescription: c.Description,
 		HiringDescription:  c.HiringDescription,
 		TechStack:          c.TechStack,
 		Batch:              c.Batch,
@@ -130,6 +130,7 @@ func mapToDetailResponse(c *Company) CompanyDetailResponse {
 		FoundedAt:          c.FoundedAt,
 		LinkedinURL:        c.LinkedinURL,
 		TwitterURL:         c.TwitterURL,
+		FacebookURL:        c.FacebookURL,
 		CreatedAt:          c.CreatedAt,
 		UpdatedAt:          c.UpdatedAt,
 	}

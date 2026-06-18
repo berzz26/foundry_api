@@ -25,7 +25,7 @@ type CompanyDetailResponse struct {
 	Slug               string     `json:"slug"`
 	Website            *string    `json:"website,omitempty"`
 	Tagline            *string    `json:"tagline,omitempty"`
-	Description        *string    `json:"description,omitempty"`
+	CompanyDescription *string    `json:"companyDescription,omitempty"`
 	HiringDescription  *string    `json:"hiringDescription,omitempty"`
 	TechStack          *string    `json:"techStack,omitempty"`
 	Batch              *string    `json:"batch,omitempty"`
@@ -41,8 +41,9 @@ type CompanyDetailResponse struct {
 	SourceSmallLogoURL *string    `json:"sourceSmallLogoUrl,omitempty"`
 	Country            *string    `json:"country,omitempty"`
 	FoundedAt          *time.Time `json:"foundedAt,omitempty"`
-	LinkedinURL        *string    `json:"linkedinUrl,omitempty"`
-	TwitterURL         *string    `json:"twitterUrl,omitempty"`
+	LinkedinURL        *string    `json:"linkedin_url,omitempty"`
+	TwitterURL         *string    `json:"twitter_url,omitempty"`
+	FacebookURL        *string    `json:"facebook_url,omitempty"`
 	CreatedAt          time.Time  `json:"createdAt"`
 	UpdatedAt          time.Time  `json:"updatedAt"`
 }

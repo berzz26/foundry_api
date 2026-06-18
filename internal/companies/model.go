@@ -27,6 +27,8 @@ type Company struct {
 	FoundedAt          *time.Time `json:"foundedAt"`
 	LinkedinURL        *string    `json:"linkedinUrl"`
 	TwitterURL         *string    `json:"twitterUrl"`
+	FacebookURL        *string    `json:"facebookUrl"`
 	CreatedAt          time.Time  `json:"createdAt"`
 	UpdatedAt          time.Time  `json:"updatedAt"`
 }
+

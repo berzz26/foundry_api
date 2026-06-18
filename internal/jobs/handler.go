@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/berzz26/foundry_api/internal/auth"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -19,6 +20,21 @@ func NewHandler(service *Service) *Handler {
 
 
 func (h *Handler) List(c *fiber.Ctx) error {
+	hasList50Privilege := auth.HasPrivilege(c, "jobs:list_50")
+
+	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
+	defer cancel()
+
+	if !hasList50Privilege {
+		res, err := h.service.GetRandomJobs(ctx, 10)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to retrieve random jobs",
+			})
+		}
+		return c.JSON(res)
+	}
+
 	var filters JobFilters
 	if err := c.QueryParser(&filters); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -26,14 +42,45 @@ func (h *Handler) List(c *fiber.Ctx) error {
 		})
 	}
 
-	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
-	defer cancel()
+	if filters.Page < 1 {
+		filters.Page = 1
+	}
+	if filters.Limit < 1 {
+		filters.Limit = 20
+	}
+
+	maxAllowed := 50
+	offset := (filters.Page - 1) * filters.Limit
+	if offset >= maxAllowed {
+		return c.JSON(JobListResponse{
+			Jobs: []JobCardResponse{},
+			Pagination: PaginationResponse{
+				Page:    filters.Page,
+				Limit:   filters.Limit,
+				Total:   maxAllowed,
+				HasNext: false,
+			},
+		})
+	}
+
+	if offset+filters.Limit > maxAllowed {
+		filters.Limit = maxAllowed - offset
+	}
 
 	res, err := h.service.List(ctx, filters)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve jobs",
 		})
+	}
+
+	if res.Pagination.Total > maxAllowed {
+		res.Pagination.Total = maxAllowed
+	}
+	res.Pagination.HasNext = (res.Pagination.Page * res.Pagination.Limit) < res.Pagination.Total
+
+	if len(res.Jobs) > res.Pagination.Limit {
+		res.Jobs = res.Jobs[:res.Pagination.Limit]
 	}
 
 	return c.JSON(res)

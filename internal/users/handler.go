@@ -76,6 +76,21 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 		})
 	}
 
+	loggedInID := c.Locals("user_id")
+	if loggedInID == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+	isOwner := loggedInID.(string) == id
+	hasReadSelf := hasPrivilege(c, "users:read_self") && isOwner
+	hasReadAny := hasPrivilege(c, "users:read")
+	if !hasReadSelf && !hasReadAny {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Forbidden. Insufficient permissions.",
+		})
+	}
+
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
@@ -102,6 +117,21 @@ func (h *Handler) GetByEmail(c *fiber.Ctx) error {
 		})
 	}
 
+	loggedInEmail := c.Locals("user_email")
+	if loggedInEmail == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+	isOwner := loggedInEmail.(string) == email
+	hasReadSelf := hasPrivilege(c, "users:read_self") && isOwner
+	hasReadAny := hasPrivilege(c, "users:read")
+	if !hasReadSelf && !hasReadAny {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Forbidden. Insufficient permissions.",
+		})
+	}
+
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
@@ -121,6 +151,12 @@ func (h *Handler) GetByEmail(c *fiber.Ctx) error {
 }
 
 func (h *Handler) List(c *fiber.Ctx) error {
+	if !hasPrivilege(c, "users:list") {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Forbidden.",
+		})
+	}
+
 	limitStr := c.Query("limit", "10")
 	offsetStr := c.Query("offset", "0")
 
@@ -160,6 +196,21 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	if id == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Missing user ID parameter",
+		})
+	}
+
+	loggedInID := c.Locals("user_id")
+	if loggedInID == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+	isOwner := loggedInID.(string) == id
+	hasWriteSelf := hasPrivilege(c, "users:write_self") && isOwner
+	hasWriteAny := hasPrivilege(c, "users:write")
+	if !hasWriteSelf && !hasWriteAny {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Forbidden. Insufficient permissions.",
 		})
 	}
 
@@ -219,6 +270,14 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	if dto.ProviderID != nil {
 		existingUser.ProviderID = dto.ProviderID
 	}
+	if dto.Role != nil {
+		if !hasPrivilege(c, "users:write") {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"error": "Forbidden.",
+			})
+		}
+		existingUser.Role = *dto.Role
+	}
 
 	updatedUser, err := h.service.Update(ctx, existingUser)
 	if err != nil {
@@ -235,6 +294,21 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 	if id == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Missing user ID parameter",
+		})
+	}
+
+	loggedInID := c.Locals("user_id")
+	if loggedInID == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+	isOwner := loggedInID.(string) == id
+	hasDeleteSelf := hasPrivilege(c, "users:write_self") && isOwner
+	hasDeleteAny := hasPrivilege(c, "users:delete")
+	if !hasDeleteSelf && !hasDeleteAny {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Forbidden. Insufficient permissions.",
 		})
 	}
 
@@ -270,7 +344,25 @@ func mapToResponseDTO(u *User) ResponseDTO {
 		ProfileImageURL: u.ProfileImageURL,
 		Provider:        u.Provider,
 		ProviderID:      u.ProviderID,
+		Role:            u.Role,
 		CreatedAt:       u.CreatedAt,
 		UpdatedAt:       u.UpdatedAt,
 	}
+}
+
+func hasPrivilege(c *fiber.Ctx, privilege string) bool {
+	privs := c.Locals("user_privileges")
+	if privs == nil {
+		return false
+	}
+	privList, ok := privs.([]string)
+	if !ok {
+		return false
+	}
+	for _, p := range privList {
+		if p == privilege {
+			return true
+		}
+	}
+	return false
 }

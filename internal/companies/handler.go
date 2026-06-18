@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/berzz26/foundry_api/internal/auth"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -29,11 +30,29 @@ func (h *Handler) List(c *fiber.Ctx) error {
 	if filters.Limit <= 0 {
 		filters.Limit = 10
 	}
-	if filters.Limit > 100 {
-		filters.Limit = 100
-	}
 	if filters.Offset < 0 {
 		filters.Offset = 0
+	}
+
+	maxAllowed := 10
+	if auth.HasPrivilege(c, "companies:list_50") {
+		maxAllowed = 50
+	}
+
+	if filters.Offset >= maxAllowed {
+		return c.JSON(CompanyListResponse{
+			Companies: []CompanyCardResponse{},
+			Pagination: PaginationResponse{
+				Total:   int64(maxAllowed),
+				Limit:   filters.Limit,
+				Offset:  filters.Offset,
+				HasNext: false,
+			},
+		})
+	}
+
+	if filters.Offset+filters.Limit > maxAllowed {
+		filters.Limit = maxAllowed - filters.Offset
 	}
 
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
@@ -44,6 +63,16 @@ func (h *Handler) List(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve companies",
 		})
+	}
+
+	// Adjust total and hasNext pagination indicators in output
+	if response.Pagination.Total > int64(maxAllowed) {
+		response.Pagination.Total = int64(maxAllowed)
+	}
+	response.Pagination.HasNext = int64(response.Pagination.Offset+response.Pagination.Limit) < response.Pagination.Total
+
+	if len(response.Companies) > response.Pagination.Limit {
+		response.Companies = response.Companies[:response.Pagination.Limit]
 	}
 
 	return c.JSON(response)

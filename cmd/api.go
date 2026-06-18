@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"os"
 
+	"github.com/berzz26/foundry_api/internal/auth"
 	"github.com/berzz26/foundry_api/internal/companies"
 	"github.com/berzz26/foundry_api/internal/founders"
 	"github.com/berzz26/foundry_api/internal/jobs"
@@ -27,6 +29,11 @@ func main() {
 	}
 	defer db.Close()
 
+	ctx := context.Background()
+	if err := auth.LoadRolePrivileges(ctx, db.DB); err != nil {
+		log.Fatalf("failed to load role privileges: %v", err)
+	}
+
 	userRepo := users.NewRepository(db.DB)
 	userService := users.NewService(userRepo)
 	userHandler := users.NewHandler(userService)
@@ -43,6 +50,10 @@ func main() {
 	founderService := founders.NewService(founderRepo)
 	founderHandler := founders.NewHandler(founderService)
 
+	authRepo := auth.NewRepository(db.DB)
+	authService := auth.NewService(userService, authRepo)
+	authHandler := auth.NewHandler(authService, cfg)
+
 	app := fiber.New()
 	app.Use(recover.New())
 
@@ -56,15 +67,26 @@ func main() {
 		AllowOrigins: "http://localhost:3001",
 		AllowMethods: "GET,POST,PUT,DELETE",
 		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
+		AllowCredentials: true,
 	}))
 	api := app.Group("/api")
 	v1 := api.Group("/v1")
 
+	// Apply optional auth parsing globally to all v1 endpoints
+	v1.Use(auth.OptionalAuth())
+
 	//mount the routes
-	v1.Mount("/users", userHandler.SetupRoutes())
+	v1.Mount("/auth", authHandler.SetupRoutes())
+	// Restrict all user route group endpoints to authenticated users
+	usersGroup := v1.Group("/users", auth.RequireAuth())
+	usersGroup.Mount("/", userHandler.SetupRoutes())
+
 	v1.Mount("/companies", companyHandler.SetupRoutes())
 	v1.Mount("/jobs", jobHandler.SetupRoutes())
-	v1.Mount("/founders", founderHandler.SetupRoutes())
+
+	// Restrict all founder route group endpoints to users with founders:access privilege
+	foundersGroup := v1.Group("/founders", auth.RequireAuth(), auth.RequirePrivilege("founders:access"))
+	foundersGroup.Mount("/", founderHandler.SetupRoutes())
 
 	log.Fatal(app.Listen(":" + cfg.HTTPPort))
 

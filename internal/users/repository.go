@@ -16,11 +16,15 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 func (r *Repository) AddUser(ctx context.Context, user *User) (*User, error) {
 	var addedUser User
 
+	if user.Role == "" {
+		user.Role = "user"
+	}
+
 	err := r.db.QueryRow(ctx, `
-	INSERT INTO users (id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id) 
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	RETURNING id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id, created_at, updated_at
-	`, user.ID, user.Email, user.FirstName, user.LastName, user.PasswordHash, user.ProfileImageURL, user.Provider, user.ProviderID).Scan(
+	INSERT INTO users (id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id, role) 
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	RETURNING id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id, role, created_at, updated_at
+	`, user.ID, user.Email, user.FirstName, user.LastName, user.PasswordHash, user.ProfileImageURL, user.Provider, user.ProviderID, user.Role).Scan(
 		&addedUser.ID,
 		&addedUser.Email,
 		&addedUser.FirstName,
@@ -29,6 +33,7 @@ func (r *Repository) AddUser(ctx context.Context, user *User) (*User, error) {
 		&addedUser.ProfileImageURL,
 		&addedUser.Provider,
 		&addedUser.ProviderID,
+		&addedUser.Role,
 		&addedUser.CreatedAt,
 		&addedUser.UpdatedAt,
 	)
@@ -42,7 +47,7 @@ func (r *Repository) GetByID(ctx context.Context, id string) (*User, error) {
 	var user User
 
 	err := r.db.QueryRow(ctx, `
-	SELECT id, email, first_name, last_name, profile_image_url, created_at, updated_at 
+	SELECT id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id, role, created_at, updated_at 
 	FROM users 
 	WHERE id = $1
 	`, id).Scan(
@@ -50,7 +55,11 @@ func (r *Repository) GetByID(ctx context.Context, id string) (*User, error) {
 		&user.Email,
 		&user.FirstName,
 		&user.LastName,
+		&user.PasswordHash,
 		&user.ProfileImageURL,
+		&user.Provider,
+		&user.ProviderID,
+		&user.Role,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -63,7 +72,7 @@ func (r *Repository) GetByEmail(ctx context.Context, email string) (*User, error
 	var user User
 
 	err := r.db.QueryRow(ctx, `
-	SELECT id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id, created_at, updated_at 
+	SELECT id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id, role, created_at, updated_at 
 	FROM users 
 	WHERE email = $1
 	`, email).Scan(
@@ -75,6 +84,7 @@ func (r *Repository) GetByEmail(ctx context.Context, email string) (*User, error
 		&user.ProfileImageURL,
 		&user.Provider,
 		&user.ProviderID,
+		&user.Role,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -88,7 +98,7 @@ func (r *Repository) List(ctx context.Context, limit int, offset int) ([]User, e
 	var users []User
 
 	rows, err := r.db.Query(ctx, `
-	SELECT id, email, firstName, lastName, passwordHash, profileImageUrl, provider, providerId, createdAt, updatedAt 
+	SELECT id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id, role, created_at, updated_at 
 	FROM users 
 	ORDER BY created_at DESC
 	LIMIT $1 OFFSET $2`, limit, offset)
@@ -108,6 +118,7 @@ func (r *Repository) List(ctx context.Context, limit int, offset int) ([]User, e
 			&user.ProfileImageURL,
 			&user.Provider,
 			&user.ProviderID,
+			&user.Role,
 			&user.CreatedAt,
 			&user.UpdatedAt,
 		)
@@ -122,12 +133,16 @@ func (r *Repository) List(ctx context.Context, limit int, offset int) ([]User, e
 func (r *Repository) Update(ctx context.Context, user *User) (*User, error) {
 	var updatedUser User
 
+	if user.Role == "" {
+		user.Role = "user"
+	}
+
 	err := r.db.QueryRow(ctx, `
 	UPDATE users SET 
-	email = $1, first_name = $2, last_name = $3, password_hash = $4, profile_image_url = $5, provider = $6, provider_id = $7, updated_at = NOW() 
-	WHERE id = $8
-	RETURNING id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id, created_at, updated_at
-	`, user.Email, user.FirstName, user.LastName, user.PasswordHash, user.ProfileImageURL, user.Provider, user.ProviderID, user.ID).Scan(
+	email = $1, first_name = $2, last_name = $3, password_hash = $4, profile_image_url = $5, provider = $6, provider_id = $7, role = $8, updated_at = NOW() 
+	WHERE id = $9
+	RETURNING id, email, first_name, last_name, password_hash, profile_image_url, provider, provider_id, role, created_at, updated_at
+	`, user.Email, user.FirstName, user.LastName, user.PasswordHash, user.ProfileImageURL, user.Provider, user.ProviderID, user.Role, user.ID).Scan(
 		&updatedUser.ID,
 		&updatedUser.Email,
 		&updatedUser.FirstName,
@@ -136,6 +151,7 @@ func (r *Repository) Update(ctx context.Context, user *User) (*User, error) {
 		&updatedUser.ProfileImageURL,
 		&updatedUser.Provider,
 		&updatedUser.ProviderID,
+		&updatedUser.Role,
 		&updatedUser.CreatedAt,
 		&updatedUser.UpdatedAt,
 	)

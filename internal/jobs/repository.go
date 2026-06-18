@@ -253,3 +253,32 @@ func (r *Repository) GetFeatured(ctx context.Context, limit int) ([]JobWithCompa
 	}
 	return list, nil
 }
+
+func (r *Repository) GetRandomJobs(ctx context.Context, limit int) ([]JobWithCompany, error) {
+	if limit > 20 {
+		limit = 10
+	}
+	query := fmt.Sprintf(`
+		SELECT %s, %s 
+		FROM jobs j
+		LEFT JOIN companies c ON j.company_id = c.id
+		ORDER BY RANDOM()
+		LIMIT $1
+	`, jobFields, companyJoinFields)
+
+	rows, err := r.db.Query(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []JobWithCompany
+	for rows.Next() {
+		j, err := scanJobWithCompany(rows)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, *j)
+	}
+	return list, nil
+}

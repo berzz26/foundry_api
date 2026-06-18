@@ -66,6 +66,7 @@ func main() {
 		AllowOrigins: "http://localhost:3001",
 		AllowMethods: "GET,POST,PUT,DELETE",
 		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
+		AllowCredentials: true,
 	}))
 	api := app.Group("/api")
 	v1 := api.Group("/v1")

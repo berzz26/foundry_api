@@ -17,8 +17,8 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-const founderFields = `id, company_id, full_name, first_name, last_name, linkedin, twitter, avatar_url, avatar_thumb, avatar_medium`
-const founderFieldsAll = `id, company_id, full_name, first_name, last_name, bio, linkedin, twitter, avatar_url, avatar_thumb, avatar_medium`
+const founderFields = `id, company_id, full_name, first_name, last_name, linkedin, twitter, avatar_url,avatar_source_url, avatar_thumb,avatar_thumb_source_url, avatar_medium`
+const founderFieldsAll = `id, company_id, full_name, first_name, last_name, bio, linkedin, twitter, avatar_url,avatar_source_url, avatar_thumb,avatar_thumb_source_url, avatar_medium`
 
 func scanFounder(row interface {
 	Scan(dest ...any) error
@@ -33,7 +33,9 @@ func scanFounder(row interface {
 		&f.Linkedin,
 		&f.Twitter,
 		&f.AvatarURL,
+		&f.AvatarSourceURL,
 		&f.AvatarThumb,
+		&f.AvatarSourceThumb,
 		&f.AvatarMedium,
 	)
 	if err != nil {
@@ -55,9 +57,10 @@ func scanFounderAll(row interface {
 		&f.Linkedin,
 		&f.Twitter,
 		&f.AvatarURL,
+		&f.AvatarSourceURL,
 		&f.AvatarThumb,
+		&f.AvatarSourceThumb,
 		&f.AvatarMedium,
-		
 	)
 	if err != nil {
 		return nil, err

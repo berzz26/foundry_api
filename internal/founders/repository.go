@@ -168,6 +168,36 @@ func (r *Repository) List(ctx context.Context, companyID *int64, limit, offset i
 	return list, nil
 }
 
+func (r *Repository) Count(ctx context.Context, companyID *int64) (int64, error) {
+	var args []any
+	var conditions []string
+	argIndex := 1
+
+	if companyID != nil {
+		conditions = append(conditions, fmt.Sprintf("company_id = $%d", argIndex))
+		args = append(args, *companyID)
+		argIndex++
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = "WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	query := fmt.Sprintf(`
+		SELECT COUNT(*) 
+		FROM founders 
+		%s
+	`, whereClause)
+
+	var count int64
+	err := r.db.QueryRow(ctx, query, args...).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 func (r *Repository) Update(ctx context.Context, f *Founder) (*Founder, error) {
 	query := fmt.Sprintf(`
 		UPDATE founders SET 

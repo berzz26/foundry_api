@@ -36,8 +36,16 @@ func (s *Service) GetByID(ctx context.Context, id int64) (*Founder, error) {
 func (s *Service) GetByCompanyID(ctx context.Context, companyId int64) ([]Founder, error) {
 	return s.repo.GetByCompanyID(ctx, companyId)
 }
-func (s *Service) List(ctx context.Context, companyID *int64, limit, offset int) ([]Founder, error) {
-	return s.repo.List(ctx, companyID, limit, offset)
+func (s *Service) List(ctx context.Context, companyID *int64, limit, offset int) ([]Founder, int64, error) {
+	list, err := s.repo.List(ctx, companyID, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := s.repo.Count(ctx, companyID)
+	if err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
 }
 
 func (s *Service) Update(ctx context.Context, f *Founder) (*Founder, error) {

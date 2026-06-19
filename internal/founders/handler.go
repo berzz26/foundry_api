@@ -165,16 +165,28 @@ func (h *Handler) List(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 
-	foundersList, err := h.service.List(ctx, companyID, limit, offset)
+	foundersList, total, err := h.service.List(ctx, companyID, limit, offset)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to list founders",
 		})
 	}
 
-	response := make([]FounderResponseDTO, len(foundersList))
+	responseList := make([]FounderResponseDTO, len(foundersList))
 	for i, f := range foundersList {
-		response[i] = mapToResponseDTO(&f)
+		responseList[i] = mapToResponseDTO(&f)
+	}
+
+	hasNext := int64(offset+limit) < total
+
+	response := FounderListResponse{
+		Founders:   responseList,
+		Pagination: PaginationResponse{
+			Total:   total,
+			Limit:   limit,
+			Offset:  offset,
+			HasNext: hasNext,
+		},
 	}
 
 	return c.JSON(response)

@@ -48,3 +48,16 @@ type FounderResponseDTO struct {
 	CreatedAt         time.Time `json:"createdAt"`
 	UpdatedAt         time.Time `json:"updatedAt"`
 }
+
+type PaginationResponse struct {
+	Total   int64 `json:"total"`
+	Limit   int   `json:"limit"`
+	Offset  int   `json:"offset"`
+	HasNext bool  `json:"hasNext"`
+}
+
+type FounderListResponse struct {
+	Founders   []FounderResponseDTO `json:"founders"`
+	Pagination PaginationResponse    `json:"pagination"`
+}
+

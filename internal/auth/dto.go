@@ -21,5 +21,5 @@ type AuthResponseDTO struct {
 }
 
 type RefreshTokenRequestDTO struct {
-	RefreshToken string `json:"refreshToken" validate:"required"`
+	RefreshToken string `json:"refreshToken"`
 }

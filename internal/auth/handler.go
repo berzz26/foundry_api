@@ -109,34 +109,38 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 
 func (h *Handler) Refresh(c *fiber.Ctx) error {
 	dto := new(RefreshTokenRequestDTO)
-	if err := c.BodyParser(dto); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+	_ = c.BodyParser(dto)
+	
+	tokenToUse := dto.RefreshToken
+	if tokenToUse == "" {
+		tokenToUse = c.Cookies("__Secure-refresh-token")
+		if tokenToUse == "" {
+			tokenToUse = c.Cookies("refresh_token")
+		}
 	}
 	
-	if err := validate.Struct(dto); err != nil {
+	if tokenToUse == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Validation failed",
-			"details": err.Error(),
+			"details": "refresh token is required in request body or cookies",
 		})
 	}
 	
 	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
 	defer cancel()
 	
-	user, token, refreshToken, err := h.service.RefreshSession(ctx, dto.RefreshToken)
+	user, token, newRefreshToken, err := h.service.RefreshSession(ctx, tokenToUse)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Invalid or expired refresh token",
 		})
 	}
 	
-	h.setAuthCookie(c, token, refreshToken)
+	h.setAuthCookie(c, token, newRefreshToken)
 	
 	return c.JSON(AuthResponseDTO{
 		Token:        token,
-		RefreshToken: refreshToken,
+		RefreshToken: newRefreshToken,
 		User:         mapToResponseDTO(user),
 	})
 }

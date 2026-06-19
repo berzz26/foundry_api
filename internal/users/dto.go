@@ -24,14 +24,15 @@ type UpdateUserDTO struct {
 }
 
 type ResponseDTO struct {
-	ID              string    `json:"id"`
-	Email           string    `json:"email"`
-	FirstName       string    `json:"firstName"`
-	LastName        string    `json:"lastName"`
-	ProfileImageURL *string   `json:"profileImageUrl,omitempty"`
-	Provider        string    `json:"provider"`
-	ProviderID      *string   `json:"providerId,omitempty"`
-	Role            string    `json:"role"`
-	CreatedAt       time.Time `json:"createdAt"`
-	UpdatedAt       time.Time `json:"updatedAt"`
+	ID                  string    `json:"id"`
+	Email               string    `json:"email"`
+	FirstName           string    `json:"firstName"`
+	LastName            string    `json:"lastName"`
+	ProfileImageURL     *string   `json:"profileImageUrl,omitempty"`
+	Provider            string    `json:"provider"`
+	ProviderID          *string   `json:"providerId,omitempty"`
+	Role                string    `json:"role"`
+	OnboardingCompleted bool      `json:"onboardingCompleted"`
+	CreatedAt           time.Time `json:"createdAt"`
+	UpdatedAt           time.Time `json:"updatedAt"`
 }

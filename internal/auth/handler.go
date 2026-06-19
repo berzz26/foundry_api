@@ -62,9 +62,10 @@ func (h *Handler) Signup(c *fiber.Ctx) error {
 	h.setAuthCookie(c, token, refreshToken)
 
 	return c.Status(fiber.StatusCreated).JSON(AuthResponseDTO{
-		Token:        token,
-		RefreshToken: refreshToken,
-		User:         mapToResponseDTO(createdUser),
+		Token:              token,
+		RefreshToken:       refreshToken,
+		User:               mapToResponseDTO(createdUser),
+		RequiresOnboarding: !createdUser.OnboardingCompleted,
 	})
 }
 
@@ -101,9 +102,10 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 	h.setAuthCookie(c, token, refreshToken)
 
 	return c.JSON(AuthResponseDTO{
-		Token:        token,
-		RefreshToken: refreshToken,
-		User:         mapToResponseDTO(user),
+		Token:              token,
+		RefreshToken:       refreshToken,
+		User:               mapToResponseDTO(user),
+		RequiresOnboarding: !user.OnboardingCompleted,
 	})
 }
 
@@ -139,9 +141,10 @@ func (h *Handler) Refresh(c *fiber.Ctx) error {
 	h.setAuthCookie(c, token, newRefreshToken)
 	
 	return c.JSON(AuthResponseDTO{
-		Token:        token,
-		RefreshToken: newRefreshToken,
-		User:         mapToResponseDTO(user),
+		Token:              token,
+		RefreshToken:       newRefreshToken,
+		User:               mapToResponseDTO(user),
+		RequiresOnboarding: !user.OnboardingCompleted,
 	})
 }
 

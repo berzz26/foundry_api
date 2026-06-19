@@ -11,6 +11,7 @@ import (
 	"github.com/berzz26/foundry_api/internal/founders"
 	"github.com/berzz26/foundry_api/internal/jobs"
 	"github.com/berzz26/foundry_api/internal/users"
+	"github.com/berzz26/foundry_api/internal/users/profile"
 	"github.com/berzz26/foundry_api/pkg/config"
 	"github.com/berzz26/foundry_api/pkg/database"
 
@@ -50,6 +51,10 @@ func main() {
 	founderService := founders.NewService(founderRepo)
 	founderHandler := founders.NewHandler(founderService)
 
+	profileRepo := profile.NewRepository(db.DB)
+	profileService := profile.NewService(profileRepo)
+	profileHandler := profile.NewHandler(profileService)
+
 	authRepo := auth.NewRepository(db.DB)
 	authService := auth.NewService(userService, authRepo)
 	authHandler := auth.NewHandler(authService, cfg)
@@ -80,6 +85,8 @@ func main() {
 	// Restrict all user route group endpoints to authenticated users
 	usersGroup := v1.Group("/users", auth.RequireAuth())
 	usersGroup.Mount("/", userHandler.SetupRoutes())
+
+	v1.Mount("/me", profileHandler.SetupRoutes())
 
 	v1.Mount("/companies", companyHandler.SetupRoutes())
 	v1.Mount("/jobs", jobHandler.SetupRoutes())

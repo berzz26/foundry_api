@@ -10,9 +10,11 @@ import (
 	"github.com/berzz26/foundry_api/internal/companies"
 	"github.com/berzz26/foundry_api/internal/founders"
 	"github.com/berzz26/foundry_api/internal/jobs"
+	"github.com/berzz26/foundry_api/internal/outreach"
 	"github.com/berzz26/foundry_api/internal/users"
 	"github.com/berzz26/foundry_api/pkg/config"
 	"github.com/berzz26/foundry_api/pkg/database"
+	"github.com/berzz26/foundry_api/pkg/email"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -50,6 +52,17 @@ func main() {
 	founderService := founders.NewService(founderRepo)
 	founderHandler := founders.NewHandler(founderService)
 
+	outreachRepo := outreach.NewRepository(db.DB)
+	outreachService := outreach.NewService(outreachRepo, email.NewSender(email.Config{
+		Host:     cfg.SMTPHost,
+		Port:     cfg.SMTPPort,
+		User:     cfg.SMTPUser,
+		Pass:     cfg.SMTPPass,
+		From:     cfg.SMTPFrom,
+		FromName: cfg.SMTPFromName,
+	}))
+	outreachHandler := outreach.NewHandler(outreachService)
+
 	authRepo := auth.NewRepository(db.DB)
 	authService := auth.NewService(userService, authRepo)
 	authHandler := auth.NewHandler(authService, cfg)
@@ -64,9 +77,9 @@ func main() {
 	}
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:3001",
-		AllowMethods: "GET,POST,PUT,DELETE",
-		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
+		AllowOrigins:     "http://localhost:3001",
+		AllowMethods:     "GET,POST,PUT,DELETE",
+		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",
 		AllowCredentials: true,
 	}))
 	api := app.Group("/api")
@@ -87,6 +100,11 @@ func main() {
 	// Restrict all founder route group endpoints to users with founders:access privilege
 	foundersGroup := v1.Group("/founders", auth.RequireAuth(), auth.RequirePrivilege("founders:access"))
 	foundersGroup.Mount("/", founderHandler.SetupRoutes())
+
+	// Outreach swipe deck + email send. Exposes founder contact info, so it is
+	// restricted to users with the founders:access privilege.
+	outreachGroup := v1.Group("/outreach", auth.RequireAuth(), auth.RequirePrivilege("founders:access"))
+	outreachGroup.Mount("/", outreachHandler.SetupRoutes())
 
 	log.Fatal(app.Listen(":" + cfg.HTTPPort))
 

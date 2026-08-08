@@ -30,6 +30,13 @@ type Config struct {
 	GithubSecret   string
 
 	GeminiAPI string
+
+	SMTPHost     string
+	SMTPPort     string
+	SMTPUser     string
+	SMTPPass     string
+	SMTPFrom     string
+	SMTPFromName string
 }
 
 func LoadConfig() *Config {
@@ -49,6 +56,11 @@ func LoadConfig() *Config {
 	geminiAPI := os.Getenv("GEMINI_API")
 	appEnv := os.Getenv("APP_ENV")
 	redisURL := os.Getenv("REDIS_URL")
+
+	smtpPort := os.Getenv("SMTP_PORT")
+	if smtpPort == "" {
+		smtpPort = "587"
+	}
 
 	if dbUrl == "" {
 		log.Fatal("DATABASE_URL is not set")
@@ -71,6 +83,12 @@ func LoadConfig() *Config {
 		GithubClientID: githubClientID,
 		GithubSecret:   githubSecret,
 		GeminiAPI:      geminiAPI,
+		SMTPHost:       os.Getenv("SMTP_HOST"),
+		SMTPPort:       smtpPort,
+		SMTPUser:       os.Getenv("SMTP_USER"),
+		SMTPPass:       os.Getenv("SMTP_PASS"),
+		SMTPFrom:       os.Getenv("SMTP_FROM"),
+		SMTPFromName:   os.Getenv("SMTP_FROM_NAME"),
 	}
 
 }

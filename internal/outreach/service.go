@@ -177,6 +177,11 @@ func mapCardToResponse(c outreachCardRow) OutreachCardResponse {
 	} else {
 		company.LogoURL = c.CompanyLogoURL
 	}
+	if c.CompanySmallSourceLogoURL != nil && *c.CompanySmallSourceLogoURL != "" {
+		company.SmallLogoURL = c.CompanySmallSourceLogoURL
+	} else {
+		company.SmallLogoURL = c.CompanySmallLogoURL
+	}
 
 	founder := FounderCard{
 		ID:        c.FounderID,

@@ -19,20 +19,22 @@ type OutreachRecord struct {
 type outreachCardRow struct {
 	OutreachID int64
 
-	CompanyID                int64
-	CompanyName              string
-	CompanyBatch             *string
-	CompanyTagline           *string
-	CompanyDescription       *string
-	CompanyHiringDescription *string
-	CompanyLogoURL           *string
-	CompanySourceLogoURL     *string
-	CompanyWebsite           *string
-	CompanyLocation          *string
-	CompanyIndustry          *string
-	CompanyStage             *string
-	CompanyTeamSize          *int32
-	CompanyIsHiring          bool
+	CompanyID                 int64
+	CompanyName               string
+	CompanyBatch              *string
+	CompanyTagline            *string
+	CompanyDescription        *string
+	CompanyHiringDescription  *string
+	CompanyLogoURL            *string
+	CompanySourceLogoURL      *string
+	CompanySmallLogoURL       *string
+	CompanySmallSourceLogoURL *string
+	CompanyWebsite            *string
+	CompanyLocation           *string
+	CompanyIndustry           *string
+	CompanyStage              *string
+	CompanyTeamSize           *int32
+	CompanyIsHiring           bool
 
 	FounderID        int64
 	FounderCompanyID *int64

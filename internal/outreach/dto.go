@@ -22,6 +22,7 @@ type CompanyCard struct {
 	Description       *string `json:"description,omitempty"`
 	HiringDescription *string `json:"hiringDescription,omitempty"`
 	LogoURL           *string `json:"logoUrl,omitempty"`
+	SmallLogoURL      *string `json:"smallLogoUrl,omitempty"`
 	Website           *string `json:"website,omitempty"`
 	Location          *string `json:"location,omitempty"`
 	Industry          *string `json:"industry,omitempty"`

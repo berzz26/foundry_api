@@ -11,6 +11,7 @@ import (
 	"github.com/berzz26/foundry_api/internal/founders"
 	"github.com/berzz26/foundry_api/internal/jobs"
 	"github.com/berzz26/foundry_api/internal/outreach"
+	"github.com/berzz26/foundry_api/internal/savedjobs"
 	"github.com/berzz26/foundry_api/internal/users"
 	"github.com/berzz26/foundry_api/pkg/config"
 	"github.com/berzz26/foundry_api/pkg/database"
@@ -68,6 +69,10 @@ func main() {
 	authService := auth.NewService(userService, authRepo)
 	authHandler := auth.NewHandler(authService, cfg)
 
+	savedJobsRepo := savedjobs.NewRepository(db.DB)
+	savedJobsService := savedjobs.NewService(savedJobsRepo)
+	savedJobsHandler := savedjobs.NewHandler(savedJobsService)
+
 	app := fiber.New()
 	app.Use(recover.New())
 
@@ -106,6 +111,10 @@ func main() {
 	// restricted to users with the founders:access privilege.
 	outreachGroup := v1.Group("/outreach", auth.RequireAuth(), auth.RequirePrivilege("founders:access"))
 	outreachGroup.Mount("/", outreachHandler.SetupRoutes())
+
+	// Restrict all saved-jobs endpoints to authenticated users
+	savedJobsGroup := v1.Group("/saved-jobs", auth.RequireAuth())
+	savedJobsGroup.Mount("/", savedJobsHandler.SetupRoutes())
 
 	log.Fatal(app.Listen(":" + cfg.HTTPPort))
 

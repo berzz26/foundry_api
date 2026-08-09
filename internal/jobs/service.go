@@ -13,7 +13,7 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func mapToJobCardResponse(j JobWithCompany) JobCardResponse {
+func ToJobCardResponse(j JobWithCompany) JobCardResponse {
 	remote := false
 	if j.Remote != nil && (*j.Remote == "yes" || *j.Remote == "only") {
 		remote = true
@@ -166,7 +166,7 @@ func (s *Service) List(ctx context.Context, filters JobFilters) (*JobListRespons
 
 	cards := make([]JobCardResponse, 0, len(jobs))
 	for _, j := range jobs {
-		cards = append(cards, mapToJobCardResponse(j))
+		cards = append(cards, ToJobCardResponse(j))
 	}
 
 	hasNext := (filters.Page * filters.Limit) < total
@@ -209,7 +209,7 @@ func (s *Service) GetRelated(ctx context.Context, id int64) (*JobRelatedResponse
 
 	cards := make([]JobCardResponse, 0, len(jobs))
 	for _, j := range jobs {
-		cards = append(cards, mapToJobCardResponse(j))
+		cards = append(cards, ToJobCardResponse(j))
 	}
 
 	return &JobRelatedResponse{Jobs: cards}, nil
@@ -223,7 +223,7 @@ func (s *Service) GetFeatured(ctx context.Context) (*JobFeaturedResponse, error)
 
 	cards := make([]JobCardResponse, 0, len(jobs))
 	for _, j := range jobs {
-		cards = append(cards, mapToJobCardResponse(j))
+		cards = append(cards, ToJobCardResponse(j))
 	}
 
 	return &JobFeaturedResponse{Jobs: cards}, nil
@@ -237,7 +237,7 @@ func (s *Service) GetRandomJobs(ctx context.Context, limit int) (*JobListRespons
 
 	cards := make([]JobCardResponse, 0, len(jobs))
 	for _, j := range jobs {
-		cards = append(cards, mapToJobCardResponse(j))
+		cards = append(cards, ToJobCardResponse(j))
 	}
 
 	return &JobListResponse{

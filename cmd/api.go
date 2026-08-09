@@ -27,6 +27,7 @@ func main() {
 	cfg := config.LoadConfig()
 	db, err := database.New(cfg.DatabaseURL)
 	if err != nil {
+		log.Fatal("Error connecting to the database: ", err)
 		panic(err)
 	}
 	defer db.Close()

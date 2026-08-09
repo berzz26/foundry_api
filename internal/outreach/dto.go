@@ -4,7 +4,7 @@ import "time"
 
 // OutreachCardResponse is one swipe card: company + founder + contact email + best-matched job + pre-written DM.
 type OutreachCardResponse struct {
-	OutreachID  int64        `json:"outreachId"`
+	OutreachID  *int64       `json:"outreachId,omitempty"`
 	FounderID   int64        `json:"founderId"`
 	Company     CompanyCard  `json:"company"`
 	Founder     FounderCard  `json:"founder"`

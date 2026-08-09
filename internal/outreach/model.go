@@ -17,7 +17,7 @@ type OutreachRecord struct {
 // outreachCardRow is the flattened join of outreach + founder + email + company + best-matched job.
 // It is the source for a single swipe card.
 type outreachCardRow struct {
-	OutreachID int64
+	OutreachID *int64
 
 	CompanyID                 int64
 	CompanyName               string

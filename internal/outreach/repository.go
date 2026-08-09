@@ -109,6 +109,32 @@ const deckFromClause = `
 	) j ON TRUE
 `
 
+const deckFromEmailsClause = `
+	FROM founder_emails2 fe
+	JOIN founders f ON f.id = fe.founder_id
+	LEFT JOIN companies c ON c.id = f.company_id
+	LEFT JOIN LATERAL (
+		SELECT o.*
+		FROM outreach o
+		WHERE o.company_id = f.company_id
+		ORDER BY o.generated_at DESC, o.id DESC
+		LIMIT 1
+	) o ON TRUE
+	LEFT JOIN LATERAL (
+		SELECT j.*
+		FROM jobs j
+		WHERE j.company_id = f.company_id
+		ORDER BY
+			CASE
+				WHEN o.role IS NOT NULL AND TRIM(o.role) <> '' AND j.title = o.role THEN 0
+				WHEN o.role IS NOT NULL AND TRIM(o.role) <> '' AND (j.title ILIKE '%' || o.role || '%' OR o.role ILIKE '%' || j.title || '%') THEN 1
+				ELSE 2
+			END,
+			j.created_at DESC
+		LIMIT 1
+	) j ON TRUE
+`
+
 const deckWhereClause = `
 	WHERE fe.email IS NOT NULL AND TRIM(fe.email) <> ''
 `
@@ -189,7 +215,7 @@ func (r *Repository) ListCards(ctx context.Context, filters ListFilters) ([]outr
 	argIndex := 1
 
 	if filters.CompanyID != nil {
-		conditions = append(conditions, fmt.Sprintf("o.company_id = $%d", argIndex))
+		conditions = append(conditions, fmt.Sprintf("f.company_id = $%d", argIndex))
 		args = append(args, *filters.CompanyID)
 		argIndex++
 	}
@@ -213,7 +239,7 @@ func (r *Repository) ListCards(ctx context.Context, filters ListFilters) ([]outr
 		where += " AND " + strings.Join(conditions, " AND ")
 	}
 
-	countQuery := fmt.Sprintf("SELECT COUNT(*) %s %s", deckFromClause, where)
+	countQuery := fmt.Sprintf("SELECT COUNT(*) %s %s", deckFromEmailsClause, where)
 	var total int64
 	if err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
 		return nil, 0, err
@@ -236,9 +262,9 @@ func (r *Repository) ListCards(ctx context.Context, filters ListFilters) ([]outr
 		SELECT %s
 		%s
 		%s
-		ORDER BY o.generated_at DESC, o.id DESC
+		ORDER BY o.generated_at DESC NULLS LAST, o.id DESC NULLS LAST
 		LIMIT $%d OFFSET $%d
-	`, deckCardFields, deckFromClause, where, argIndex, argIndex+1)
+	`, deckCardFields, deckFromEmailsClause, where, argIndex, argIndex+1)
 
 	rows, err := r.db.Query(ctx, query, dataArgs...)
 	if err != nil {

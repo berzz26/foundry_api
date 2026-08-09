@@ -89,6 +89,7 @@ type PaginationResponse struct {
 type OutreachListResponse struct {
 	Cards      []OutreachCardResponse `json:"cards"`
 	Pagination PaginationResponse     `json:"pagination"`
+	Seed       string                 `json:"seed"`
 }
 
 type ListFilters struct {
@@ -97,6 +98,7 @@ type ListFilters struct {
 	CompanyID *int64  `query:"companyId"`
 	Search    *string `query:"search"`
 	HasJob    *bool   `query:"hasJob"`
+	Seed      *string `query:"seed"`
 }
 
 // SendEmailRequest is the body of POST /outreach/:id/send.

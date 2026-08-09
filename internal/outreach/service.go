@@ -2,8 +2,11 @@ package outreach
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -25,7 +28,13 @@ func NewService(repo *Repository, sender EmailSender) *Service {
 }
 
 func (s *Service) List(ctx context.Context, filters ListFilters) (*OutreachListResponse, error) {
-	cards, total, err := s.repo.ListCards(ctx, filters)
+	seed := filters.Seed
+	if seed == nil || *seed == "" {
+		s := randomSeed()
+		seed = &s
+	}
+
+	cards, total, err := s.repo.ListCards(ctx, filters, *seed)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +64,16 @@ func (s *Service) List(ctx context.Context, filters ListFilters) (*OutreachListR
 			Offset:  offset,
 			HasNext: int64(offset+limit) < total,
 		},
+		Seed: *seed,
 	}, nil
+}
+
+func randomSeed() string {
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		return fmt.Sprintf("%d", time.Now().UnixNano())
+	}
+	return hex.EncodeToString(b)
 }
 
 func (s *Service) GetByID(ctx context.Context, outreachID int64, founderID *int64) (*OutreachCardResponse, error) {

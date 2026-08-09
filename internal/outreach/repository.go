@@ -209,7 +209,7 @@ func scanOutreachCard(row interface {
 	return &c, nil
 }
 
-func (r *Repository) ListCards(ctx context.Context, filters ListFilters) ([]outreachCardRow, int64, error) {
+func (r *Repository) ListCards(ctx context.Context, filters ListFilters, seed string) ([]outreachCardRow, int64, error) {
 	var args []any
 	var conditions []string
 	argIndex := 1
@@ -257,14 +257,17 @@ func (r *Repository) ListCards(ctx context.Context, filters ListFilters) ([]outr
 		offset = 0
 	}
 
-	dataArgs := append(args, limit, offset)
+	dataArgs := append(args, seed, limit, offset)
 	query := fmt.Sprintf(`
 		SELECT %s
 		%s
 		%s
-		ORDER BY o.generated_at DESC NULLS LAST, o.id DESC NULLS LAST
+		ORDER BY
+			CASE WHEN c.batch ~ '[0-9]+$' THEN SUBSTRING(c.batch FROM '[0-9]+$')::int ELSE NULL END DESC NULLS LAST,
+			md5($%d::text || ':' || c.id::text),
+			c.id
 		LIMIT $%d OFFSET $%d
-	`, deckCardFields, deckFromEmailsClause, where, argIndex, argIndex+1)
+	`, deckCardFields, deckFromEmailsClause, where, argIndex, argIndex+1, argIndex+2)
 
 	rows, err := r.db.Query(ctx, query, dataArgs...)
 	if err != nil {

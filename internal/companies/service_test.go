@@ -58,7 +58,7 @@ func TestMapToCardResponse(t *testing.T) {
 		OpenRoles:          5,
 	}
 
-	dto := mapToCardResponse(comp)
+	dto := ToCardResponse(comp)
 
 	if dto.ID != 42 {
 		t.Errorf("Expected ID 42, got %d", dto.ID)

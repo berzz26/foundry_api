@@ -54,7 +54,7 @@ func (s *Service) List(ctx context.Context, filters CompanyFilters) (*CompanyLis
 
 	cards := make([]CompanyCardResponse, len(list))
 	for i, c := range list {
-		cards[i] = mapToCardResponse(&c)
+		cards[i] = ToCardResponse(&c)
 	}
 
 	limit := 10
@@ -87,7 +87,7 @@ func (s *Service) GetMetadata(ctx context.Context) (*CompanyMetadataResponse, er
 	return s.repo.GetMetadata(ctx)
 }
 
-func mapToCardResponse(c *Company) CompanyCardResponse {
+func ToCardResponse(c *Company) CompanyCardResponse {
 	var tagline string
 	if c.Tagline != nil {
 		tagline = *c.Tagline

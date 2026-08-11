@@ -1,7 +1,7 @@
 APP_NAME=foundry_api
 
 build:
-	go build -o bin/$(APP_NAME) .
+	go build -o bin/$(APP_NAME) ./cmd/api.go
 
 run:
 	go run cmd/api.go

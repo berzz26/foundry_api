@@ -40,11 +40,9 @@ type Config struct {
 }
 
 func LoadConfig() *Config {
-	err := godotenv.Load()
+	_  = godotenv.Load()
 
-	if err != nil {
-		log.Fatal(".env file not found")
-	}
+	
 
 	dbUrl := os.Getenv("DATABASE_URL")
 	port := os.Getenv("HTTP_PORT")

@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS outreach_sends (
     id              bigserial PRIMARY KEY,
-    outreach_id     bigint NOT NULL REFERENCES outreach(id) ON DELETE CASCADE,
+    outreach_id     bigint REFERENCES outreach(id) ON DELETE CASCADE,
     founder_id      bigint,
     recipient_email text NOT NULL,
     subject         text,

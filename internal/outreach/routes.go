@@ -7,6 +7,7 @@ func (h *Handler) SetupRoutes() *fiber.App {
 
 	app.Get("/", h.List)
 	app.Get("/:id", h.GetByID)
+	app.Post("/send", h.Send)
 	app.Post("/:id/send", h.Send)
 
 	return app

@@ -111,7 +111,7 @@ type SendEmailRequest struct {
 
 type SendEmailResponse struct {
 	SendID     int64     `json:"sendId"`
-	OutreachID int64     `json:"outreachId"`
+	OutreachID *int64    `json:"outreachId,omitempty"`
 	FounderID  *int64    `json:"founderId,omitempty"`
 	To         string    `json:"to"`
 	Subject    string    `json:"subject"`

@@ -335,7 +335,6 @@ func (r *Repository) GetOutreach(ctx context.Context, id int64) (*OutreachRecord
 	return &o, nil
 }
 
-// GetFounderEmail returns the first verified email for a founder.
 func (r *Repository) GetFounderEmail(ctx context.Context, founderID int64) (string, error) {
 	var email string
 	err := r.db.QueryRow(ctx, `

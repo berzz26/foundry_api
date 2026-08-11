@@ -77,10 +77,11 @@ type outreachCardRow struct {
 	JobCreatedAt        *time.Time
 }
 
-// SendRecord is a single row written to outreach_sends.
+// SendRecord is a single row written to outreach_sends. OutreachID is nil when
+// the send is made for a card that has no outreach (founder-only fallback).
 type SendRecord struct {
 	ID         int64
-	OutreachID int64
+	OutreachID *int64
 	FounderID  *int64
 	Recipient  string
 	Subject    *string

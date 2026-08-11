@@ -91,33 +91,46 @@ func (s *Service) GetByID(ctx context.Context, outreachID int64, founderID *int6
 // Send delivers a message to the founder email for an outreach and records the attempt.
 // When SMTP is not configured it runs in dry-run mode and records the send with
 // status "dry_run" instead of delivering anything.
+//
+// outreachID may be 0 when the card has no outreach. In that case the founder ID
+// from the request payload is used as the fallback and the subject/message come
+// exclusively from the request payload.
 func (s *Service) Send(ctx context.Context, outreachID int64, req SendEmailRequest, userID string) (*SendEmailResponse, error) {
-	outreach, err := s.repo.GetOutreach(ctx, outreachID)
-	if err != nil {
-		return nil, err
+	var outreach *OutreachRecord
+	if outreachID > 0 {
+		o, err := s.repo.GetOutreach(ctx, outreachID)
+		if err != nil && !errors.Is(err, ErrOutreachNotFound) {
+			return nil, err
+		}
+		if err == nil {
+			outreach = o
+		}
 	}
 
 	var recipient string
-	if req.To != nil && *req.To != "" {
+	switch {
+	case req.To != nil && *req.To != "":
 		recipient = *req.To
-	} else if req.FounderID != nil {
+	case req.FounderID != nil:
 		email, err := s.repo.GetFounderEmail(ctx, *req.FounderID)
 		if err != nil {
 			return nil, err
 		}
 		recipient = email
-	} else {
+	case outreach != nil:
 		email, err := s.repo.GetOutreachFounderEmail(ctx, outreachID)
 		if err != nil {
 			return nil, err
 		}
 		recipient = email
+	default:
+		return nil, ErrNoRecipient
 	}
 
 	subject := ""
 	if req.Subject != nil && *req.Subject != "" {
 		subject = *req.Subject
-	} else if outreach.Subject != nil {
+	} else if outreach != nil && outreach.Subject != nil {
 		subject = *outreach.Subject
 	}
 
@@ -127,7 +140,7 @@ func (s *Service) Send(ctx context.Context, outreachID int64, req SendEmailReque
 		if err := s.sender.Send(recipient, subject, req.Message); err != nil {
 			errStr := err.Error()
 			rec := &SendRecord{
-				OutreachID: outreachID,
+				OutreachID: outreachIDPtr(outreachID, outreach),
 				FounderID:  req.FounderID,
 				Recipient:  recipient,
 				Subject:    &subject,
@@ -150,7 +163,7 @@ func (s *Service) Send(ctx context.Context, outreachID int64, req SendEmailReque
 	}
 
 	rec := &SendRecord{
-		OutreachID: outreachID,
+		OutreachID: outreachIDPtr(outreachID, outreach),
 		FounderID:  founderID,
 		Recipient:  recipient,
 		Subject:    &subject,
@@ -165,7 +178,7 @@ func (s *Service) Send(ctx context.Context, outreachID int64, req SendEmailReque
 
 	return &SendEmailResponse{
 		SendID:     sendID,
-		OutreachID: outreachID,
+		OutreachID: outreachIDPtr(outreachID, outreach),
 		FounderID:  founderID,
 		To:         recipient,
 		Subject:    subject,
@@ -173,6 +186,15 @@ func (s *Service) Send(ctx context.Context, outreachID int64, req SendEmailReque
 		Mode:       mode,
 		SentAt:     time.Now(),
 	}, nil
+}
+
+// outreachIDPtr returns the outreach ID when an outreach record was resolved,
+// and nil otherwise (founder-only send with no outreach).
+func outreachIDPtr(outreachID int64, outreach *OutreachRecord) *int64 {
+	if outreach != nil {
+		return &outreachID
+	}
+	return nil
 }
 
 func mapCardToResponse(c outreachCardRow) OutreachCardResponse {

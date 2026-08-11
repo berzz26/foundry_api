@@ -77,9 +77,15 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 }
 
 func (h *Handler) Send(c *fiber.Ctx) error {
-	id, err := parseOutreachID(c)
-	if err != nil {
-		return err
+	var outreachID int64
+	if idStr := c.Params("id"); idStr != "" {
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid outreach ID format",
+			})
+		}
+		outreachID = id
 	}
 
 	dto := new(SendEmailRequest)
@@ -104,7 +110,7 @@ func (h *Handler) Send(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(c.UserContext(), 15*time.Second)
 	defer cancel()
 
-	res, err := h.service.Send(ctx, id, *dto, userID)
+	res, err := h.service.Send(ctx, outreachID, *dto, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrOutreachNotFound):

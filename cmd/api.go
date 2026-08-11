@@ -83,10 +83,10 @@ func main() {
 	}
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "*",
+		AllowOrigins:     "http://localhost:3001",
 		AllowMethods:     "GET,POST,PUT,DELETE",
 		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",
-		AllowCredentials: false,
+		AllowCredentials: true,
 	}))
 	api := app.Group("/api")
 	v1 := api.Group("/v1")

@@ -91,6 +91,12 @@ func main() {
 	api := app.Group("/api")
 	v1 := api.Group("/v1")
 
+	v1.Get("/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status": "foundry api server is up",
+		})
+	})
+
 	// Apply optional auth parsing globally to all v1 endpoints
 	v1.Use(auth.OptionalAuth())
 

@@ -86,7 +86,7 @@ func main() {
 		AllowOrigins:     "*",
 		AllowMethods:     "GET,POST,PUT,DELETE",
 		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",
-		AllowCredentials: true,
+		AllowCredentials: false,
 	}))
 	api := app.Group("/api")
 	v1 := api.Group("/v1")
